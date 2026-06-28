@@ -1,0 +1,40 @@
+title: "Ideas / Feature Requests"
+labels: ["enhancement", "discussion"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## 💡 Feature Request / Idea
+
+        Have an idea for improving TunaOS? We'd love to hear it!
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: "What problem does this solve?"
+      description: "Describe the use case or pain point"
+      placeholder: "I wish TunaOS could..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: "Describe the solution"
+      description: "What should the feature look like?"
+      placeholder: "It would be great if..."
+    validations:
+      required: true
+
+  - type: dropdown
+    id: impact
+    attributes:
+      label: "Impact area"
+      options:
+        - Desktop experience
+        - Image / build system
+        - Documentation
+        - Ecosystem / integrations
+        - Other
+    validations:
+      required: false

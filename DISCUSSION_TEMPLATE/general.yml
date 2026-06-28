@@ -1,0 +1,18 @@
+title: "General Discussion"
+labels: ["discussion"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## 💬 General Discussion
+
+        Use this category for general conversations about TunaOS — ideas, questions that don't fit elsewhere, or just to say hello!
+
+  - type: textarea
+    id: discussion
+    attributes:
+      label: "What's on your mind?"
+      description: "Share your thoughts, questions, or ideas about TunaOS"
+      placeholder: "I've been thinking about..."
+    validations:
+      required: true

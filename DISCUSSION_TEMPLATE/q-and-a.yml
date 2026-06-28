@@ -1,0 +1,44 @@
+title: "Q&A"
+labels: ["question", "discussion"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## ❓ Questions & Answers
+
+        Got a question about using or building TunaOS? Ask away!
+
+  - type: textarea
+    id: question
+    attributes:
+      label: "Your question"
+      description: "What would you like to know?"
+      placeholder: "How do I..."
+    validations:
+      required: true
+
+  - type: dropdown
+    id: topic
+    attributes:
+      label: "Topic"
+      options:
+        - Installation / Setup
+        - Desktop Environment
+        - Image building / Containerfile
+        - Drivers / Hardware
+        - Bootc / OSTree
+        - Package management (brew, flatpak)
+        - Documentation
+        - Contributing
+        - Other
+    validations:
+      required: false
+
+  - type: input
+    id: variant
+    attributes:
+      label: "Variant"
+      description: "Which TunaOS variant are you using?"
+      placeholder: "e.g., Yellowfin GNOME HWE"
+    validations:
+      required: false

@@ -1,0 +1,50 @@
+title: "Show and Tell"
+labels: ["show-and-tell", "discussion"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## 🎉 Show and Tell
+
+        Share what you've built with TunaOS! Screenshots, workflows, customizations, or deployments.
+
+  - type: input
+    id: title
+    attributes:
+      label: "Title"
+      description: "A short, descriptive title"
+      placeholder: "My TunaOS desktop setup"
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: "What did you build?"
+      description: "Describe your setup or project"
+      placeholder: "I set up TunaOS with..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: media
+    attributes:
+      label: "Screenshots or Media"
+      description: "Drag and drop images or paste links"
+    validations:
+      required: false
+
+  - type: dropdown
+    id: variant
+    attributes:
+      label: "Variant(s) used"
+      multiple: true
+      options:
+        - Yellowfin (AlmaLinux Kitten)
+        - Albacore (AlmaLinux 10)
+        - Skipjack (CentOS Stream 10)
+        - Bonito (Fedora)
+        - Tromsø (KDE)
+        - XFCE Linux
+    validations:
+      required: false
