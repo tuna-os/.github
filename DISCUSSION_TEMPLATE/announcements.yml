@@ -1,0 +1,34 @@
+title: "Announcements"
+labels: ["announcement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## 📢 Announcements
+
+        Official announcements from the TunaOS maintainers — releases, events, and community updates.
+
+  - type: input
+    id: version
+    attributes:
+      label: "Version / Release"
+      description: "Version number if applicable"
+      placeholder: "v1.0.0"
+    validations:
+      required: false
+
+  - type: textarea
+    id: details
+    attributes:
+      label: "Announcement details"
+      description: "What's new, what changed, and what to know"
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: action
+    attributes:
+      label: "Action items"
+      options:
+        - label: "Update your images: `bootc update`"
+        - label: "Check the release notes for breaking changes"
