@@ -1,0 +1,20 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["config:recommended"],
+  "automerge": true,
+  "platformAutomerge": true,
+  "rebaseWhen": "conflicted",
+  "packageRules": [
+    {
+      "description": "Keep routine project inputs current once CI passes",
+      "matchUpdateTypes": ["major", "minor", "patch", "pin", "pinDigest", "digest"],
+      "automerge": true
+    },
+    {
+      "description": "Reduce CI churn from rapidly moving base-image digests",
+      "matchDatasources": ["docker"],
+      "matchPackageNames": ["<high-churn-image>"],
+      "minimumReleaseAge": "3 days"
+    }
+  ]
+}
