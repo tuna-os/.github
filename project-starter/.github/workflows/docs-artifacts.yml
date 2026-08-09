@@ -1,0 +1,36 @@
+# Opt-in profile: capture real product evidence, validate it, and make it
+# available for documentation. Prefer a central docs repository to own the
+# final commit, so its GITHUB_TOKEN has exactly the permissions it needs.
+name: Capture documentation artifacts
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 6 * * 1"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: docs-artifacts
+  cancel-in-progress: false
+
+jobs:
+  capture:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - name: Capture a real walkthrough or screenshot
+        run: just screenshots
+      - name: Validate captured output
+        run: |
+          test -d walkthrough-out
+          find walkthrough-out -type f | grep -E '\.(png|json)$' | grep -q .
+      - name: Upload diagnostic and documentation artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: <project>-walkthrough
+          path: walkthrough-out/
+          if-no-files-found: warn
