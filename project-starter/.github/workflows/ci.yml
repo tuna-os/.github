@@ -1,0 +1,39 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run the local-equivalent checks
+        run: |
+          # Install the project toolchain and just before enabling this template.
+          just check
+
+  # Make this the sole required branch-protection check. Add every mandatory
+  # job to needs; optional E2E jobs must report success or skipped.
+  required-checks:
+    if: always()
+    needs: [validate]
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Fail if a required job did not succeed
+        env:
+          NEEDS: ${{ toJson(needs) }}
+        run: |
+          failed=$(echo "$NEEDS" | jq -r 'to_entries[] | select(.value.result | IN("success", "skipped") | not) | .key')
+          test -z "$failed" || { echo "Failed jobs: $failed"; exit 1; }
