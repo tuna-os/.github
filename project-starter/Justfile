@@ -1,0 +1,32 @@
+# TunaOS project task surface. Replace commands with the project’s real tools.
+set shell := ["bash", "-euo", "pipefail", "-c"]
+
+default:
+    @just --list
+
+# The command CI invokes. Keep it fast enough for pull requests.
+check: fmt-check lint test
+
+fmt:
+    @echo "Implement formatting for this project"
+
+fmt-check:
+    @echo "Implement a non-mutating formatting check"
+
+lint:
+    @echo "Implement linters (including actionlint for workflow-heavy projects)"
+
+test:
+    @echo "Implement the fast, deterministic test suite"
+
+build:
+    @echo "Implement the production build"
+
+# Keep expensive or privileged checks separate from normal PR validation.
+e2e:
+    @echo "Implement an explicitly dispatched or scheduled end-to-end suite"
+
+# A documentation pipeline should capture the running product, then validate
+# the output before publishing it.
+screenshots:
+    @echo "Implement product screenshot or walkthrough capture"

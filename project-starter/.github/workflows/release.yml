@@ -1,0 +1,38 @@
+# Opt-in profile: semantic releases on the protected default branch.
+# Queue releases: do not cancel a release that is already computing or tagging.
+name: Release
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  issues: write
+  pull-requests: write
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    if: github.repository == '<owner>/<repository>'
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Install release tooling
+        run: |
+          # Install the project's semantic-release/release toolchain here.
+          echo "Install release tooling"
+      - name: Create release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Conventional commits should determine the version and changelog.
+          # Publish packages/taps only with narrowly scoped release credentials.
+          echo "Run semantic release"

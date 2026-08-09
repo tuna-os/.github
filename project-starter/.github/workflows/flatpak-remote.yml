@@ -1,0 +1,52 @@
+# Opt-in profile: copy to .github/workflows after setting every placeholder.
+# It builds a Flatpak as OCI, publishes it to GHCR, and updates the remote
+# index only after a successful build. Keep remote-index credentials scoped to
+# this trusted, same-repository workflow.
+name: Publish Flatpak remote entry
+
+on:
+  workflow_dispatch:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: read
+  packages: write
+
+concurrency:
+  group: flatpak-remote-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  APP_ID: <org.example.App>
+  OCI_IMAGE: ghcr.io/<owner>/<app>
+
+jobs:
+  publish:
+    if: github.repository == '<owner>/<repository>'
+    runs-on: ubuntu-24.04
+    container:
+      image: ghcr.io/flathub-infra/flatpak-github-actions:gnome-50
+      options: --privileged
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build Flatpak
+        uses: flatpak/flatpak-github-actions/flatpak-builder@v6
+        with:
+          manifest-path: <path/to/manifest.json>
+          build-bundle: false
+          upload-artifact: false
+      - name: Export OCI and publish
+        run: |
+          flatpak build-bundle --oci --arch=x86_64 repo app.oci "$APP_ID"
+          echo "${{ secrets.GITHUB_TOKEN }}" | skopeo login ghcr.io -u "${{ github.actor }}" --password-stdin
+          skopeo copy "oci:app.oci" "docker://$OCI_IMAGE:${{ github.ref_name }}"
+      - name: Update remote index
+        env:
+          FLATPAK_INDEX_TOKEN: ${{ secrets.FLATPAK_INDEX_TOKEN }}
+        run: |
+          # Check out the trusted central index repository, update it with the
+          # OCI metadata, validate the result, and commit only if it changed.
+          # Reuse tuna-os/docs/.github/scripts/update-index.py where applicable.
+          test -n "$FLATPAK_INDEX_TOKEN"
+          echo "Implement the central index update here"
