@@ -39,8 +39,10 @@ jobs:
       - name: Export OCI and publish
         run: |
           flatpak build-bundle --oci --arch=x86_64 repo app.oci "$APP_ID"
-          echo "${{ secrets.GITHUB_TOKEN }}" | skopeo login ghcr.io -u "${{ github.actor }}" --password-stdin
+          echo "${{ env.GITHUB_TOKEN }}" | skopeo login ghcr.io -u "${{ github.actor }}" --password-stdin
           skopeo copy "oci:app.oci" "docker://$OCI_IMAGE:${{ github.ref_name }}"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Update remote index
         env:
           FLATPAK_INDEX_TOKEN: ${{ secrets.FLATPAK_INDEX_TOKEN }}
