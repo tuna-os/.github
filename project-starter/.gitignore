@@ -1,0 +1,39 @@
+# ---------------------------------------------------------------------------
+# tuna-os project starter — baseline .gitignore
+# New repos should keep this file (extend, don't delete) so that local build
+# output and agent runtime artifacts never enter git.
+# ---------------------------------------------------------------------------
+
+# Local scratch / build output (never commit)
+.tmp/
+.tmp/**
+build/
+builddir/
+dist/
+out/
+target/
+*.iso
+*.img
+
+# Generated binaries / coverage
+*.wasm
+coverage.out
+*.o
+*.so
+*.a
+
+# Agent runtime artifacts
+.pi/
+.pi/goals/
+
+# Language caches
+node_modules/
+__pycache__/
+*.pyc
+.pytest_cache/
+.gradle/
+
+# Local environment / secrets
+.env
+.env.*
+!.env.example
