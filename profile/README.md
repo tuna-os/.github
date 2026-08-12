@@ -29,16 +29,16 @@ Inspired by [Bluefin](https://projectbluefin.io) and the [Universal Blue](https:
 |---|---|---|
 | [**yellowfin**](https://github.com/tuna-os/tunaOS) | AlmaLinux Kitten 10 | Closest to upstream CentOS Stream |
 | [**albacore**](https://github.com/tuna-os/tunaOS) | AlmaLinux 10 | Stable Enterprise Linux base |
-| [**skipjack**](https://github.com/tuna-os/tunaOS) | CentOS Stream 10 | Experimental upstream builds |
+| [**skipjack**](https://github.com/tuna-os/tunaOS) | CentOS Stream 10 | Beta — upstream testing builds |
 | [**bonito-x13s**](https://github.com/tuna-os/bonito-x13s) | Fedora | Lenovo ThinkPad X13s (ARM64/Qualcomm) |
 
 ### Desktop & Hardware Options
 
-Every image ships multiple desktops (`gnome`, `kde`, `cosmic`, `niri`) and hardware variants (`-hwe` for newer kernels, `-gdx` for NVIDIA/CUDA).
+Every image ships multiple desktops (`gnome`, `kde`, `cosmic`, `niri`) and hardware variants (`-hwe` for newer kernels, `-nvidia` for NVIDIA/CUDA).
 
 ```
 ghcr.io/tuna-os/yellowfin:gnome
-ghcr.io/tuna-os/albacore:kde-gdx
+ghcr.io/tuna-os/albacore:kde-nvidia
 ghcr.io/tuna-os/skipjack:gnome-hwe
 ```
 
@@ -49,7 +49,7 @@ ghcr.io/tuna-os/skipjack:gnome-hwe
 | [tunaOS](https://github.com/tuna-os/tunaOS) | Main image builder |
 | [docs](https://github.com/tuna-os/docs) | Documentation site |
 | [chunkah](https://github.com/tuna-os/chunkah) | OCI layer optimization tool |
-| [github-copr](https://github.com/tuna-os/github-copr) | RPM build system with GitHub Actions |
+| [tunaos-packages](https://github.com/tuna-os/tunaos-packages) | Cross-distro package factory — RPM + DEB repositories (formerly github-copr) |
 | [bonito-x13s](https://github.com/tuna-os/bonito-x13s) | ThinkPad X13s ARM64 image |
 
 ---
