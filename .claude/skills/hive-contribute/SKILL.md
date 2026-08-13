@@ -100,6 +100,38 @@ One issue per run. Reference the issue with `Fixes #N`. State what you
 verified, what you did not, and any pre-existing breakage you found on the way.
 Then stop — do not batch a second issue into the same run.
 
+## Where this runs
+
+The hive half of this skill needs no credentials anywhere. The GitHub half does,
+and that is what varies by session type.
+
+**Interactive cloud session — works.** The session holds a scoped GitHub grant
+(exposed as `mcp__github__*` tools) covering the org's repos, which is enough to
+branch, push, and open a PR. This is the configuration that produced
+`tuna-os/gtk-office-suite#217`.
+
+**Scheduled / trigger-fired session — read-only, cannot ship.** Verified by
+firing a routine and having it report its own tooling:
+
+- no `mcp__*` tools of any kind are injected, so there is no `mcp__github__*`
+  and no `add_repo` either
+- `GH_TOKEN` and `GITHUB_TOKEN` are set to the literal placeholder
+  `proxy-injected`; `gh auth status` rejects it
+- any authenticated call returns `GitHub access to this repository is not
+  enabled for this session. Use add_repo to request access` — and the tool it
+  names is not available to ask with
+- `gh repo fork` is separately refused by the permission classifier as an
+  unattended state-changing action
+- anonymous reads (`git clone`, `git ls-remote`, WebFetch on issue pages) all
+  succeed, so the picker and the research half work fine
+
+So a routine created from inside a session **inherits none of that session's
+repo access**. Before scheduling this skill, confirm the fired session can
+actually reach GitHub — otherwise every run does the analysis and the
+implementation and then has nowhere to put them. Create the routine from the
+claude.ai routines UI, or from a surface that attaches repo access to fired
+sessions.
+
 ## Guardrails
 
 - **Scope.** Only repos in `SCOPED_REPOS` in the picker. The queue serves
