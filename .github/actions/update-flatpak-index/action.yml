@@ -1,0 +1,39 @@
+name: "Update Flatpak OCI Index"
+description: >-
+  Canonical implementation of update-index.py (tuna-os/tunaos#1183). Reads a
+  local OCI layout directory and updates a Flatpak index/static file with the
+  published image's digest, architecture, and org.flatpak.* labels.
+author: tuna-os
+
+inputs:
+  oci-dir:
+    description: Path to the local OCI layout directory (must contain index.json)
+    required: true
+  index-file:
+    description: Path to the index/static file to create or update
+    required: false
+    default: index/static
+  repo-name:
+    description: Repository name on the registry, e.g. tuna-os/tavern
+    required: true
+  registry:
+    description: Registry host used to build the index's Registry field
+    required: false
+    default: ghcr.io
+  tags:
+    description: Space-separated list of tags for this image entry
+    required: false
+    default: latest
+
+runs:
+  using: composite
+  steps:
+    - name: Update index
+      shell: bash
+      run: |
+        python3 "${{ github.action_path }}/update-index.py" \
+          --oci-dir "${{ inputs.oci-dir }}" \
+          --index-file "${{ inputs.index-file }}" \
+          --repo-name "${{ inputs.repo-name }}" \
+          --registry "${{ inputs.registry }}" \
+          --tags ${{ inputs.tags }}

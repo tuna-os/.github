@@ -1,0 +1,71 @@
+name: Flatpak Tooling Drift Check
+
+# Interim guard for tuna-os/tunaos#1183 (recommendation #3): update-index.py
+# is byte-copied across 8 repos with no shared source of truth. Until each
+# repo migrates to the update-flatpak-index composite action in this repo,
+# this workflow catches any repo's committed copy silently drifting from the
+# copy every repo is *supposed* to still match (the git blob every repo had
+# at the time #1183 was filed) — drift would mean one repo's index-writing
+# logic diverged from the other 7 without anyone noticing until a publish
+# job broke.
+
+on:
+  schedule:
+    - cron: "0 6 * * 1" # Monday 06:00 UTC
+  workflow_dispatch:
+
+permissions:
+  issues: write
+  contents: read
+
+jobs:
+  check-drift:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Compare each repo's copy against the canonical hash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+
+          CANONICAL_SHA=$(git hash-object .github/actions/update-flatpak-index/update-index.py)
+          echo "Canonical blob sha: ${CANONICAL_SHA}"
+
+          REPOS="tuna-installer-cosmic tuna-installer-kde tuna-installer-niri tuna-installer-xfce bootc-installer dualcut mandelbrot gtk-office-suite"
+
+          DRIFTED=""
+          for repo in $REPOS; do
+            SHA=$(gh api "repos/tuna-os/${repo}/contents/.github/scripts/update-index.py" --jq '.sha' 2>/dev/null || echo "MISSING")
+            if [[ "$SHA" == "MISSING" ]]; then
+              echo "::warning::${repo}: .github/scripts/update-index.py not found (already migrated off the copy, or moved)"
+            elif [[ "$SHA" != "$CANONICAL_SHA" ]]; then
+              echo "::error::${repo}: update-index.py has drifted (sha ${SHA} != canonical ${CANONICAL_SHA})"
+              DRIFTED="${DRIFTED} ${repo}"
+            else
+              echo "${repo}: matches canonical"
+            fi
+          done
+
+          if [[ -n "$DRIFTED" ]]; then
+            TITLE="Flatpak index tooling drift detected:${DRIFTED}"
+            EXISTING=$(gh issue list --repo "${{ github.repository }}" --search "in:title \"Flatpak index tooling drift detected\"" --state open --json number -q '.[0].number' || true)
+            BODY_FILE=$(mktemp)
+            {
+              echo "update-index.py has diverged from the canonical copy in \`.github/actions/update-flatpak-index/update-index.py\` in:${DRIFTED}"
+              echo ""
+              echo "Either port the fix back into the canonical copy (if the drift is an improvement worth keeping org-wide), or migrate the drifted repo(s) onto the [update-flatpak-index action](../actions/update-flatpak-index) so there's nothing left to drift. See tuna-os/tunaos#1183."
+            } > "$BODY_FILE"
+            if [[ -n "$EXISTING" ]]; then
+              gh issue comment "$EXISTING" --repo "${{ github.repository }}" --body-file "$BODY_FILE"
+            else
+              gh issue create --repo "${{ github.repository }}" --title "$TITLE" --body-file "$BODY_FILE" --label "architecture" || \
+                gh issue create --repo "${{ github.repository }}" --title "$TITLE" --body-file "$BODY_FILE"
+            fi
+            exit 1
+          fi
+
+          echo "No drift — all 8 repos match the canonical copy (or have already migrated off it)."
