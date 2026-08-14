@@ -1,6 +1,6 @@
 # Org-wide ROADMAP inventory
 
-**Last verified**: 2026-08-13 · **Source**: `gh api repos/tuna-os/<repo>/contents/ROADMAP.md?ref=<default_branch>` against every active (non-archived) repo in the `tuna-os` org.
+**Last verified**: 2026-08-14 · **Source**: `gh api repos/tuna-os/<repo>/contents/ROADMAP.md?ref=<default_branch>` against every active (non-archived) repo in the `tuna-os` org.
 
 tunaos#1295 and tunaos#1361 both found the same problem from different
 angles: nobody — human or agent — could see at a glance which repos in the
@@ -19,7 +19,7 @@ take no further planning by definition.
 |---|---|---|
 | Tavern | main | ✅ |
 | bluefin-cli | main | ✅ |
-| bootc-installer | dev | ✅ (tuna-os/bootc-installer#14, pending merge) |
+| bootc-installer | dev | ✅ (tuna-os/bootc-installer#14, merged 08-14) |
 | bootc-migrate | main | ✅ |
 | corral | main | ✅ |
 | docs | main | ✅ |
