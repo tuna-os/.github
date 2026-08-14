@@ -1,0 +1,85 @@
+name: Adoption request
+description: Tell us how you or your organization uses TunaOS — gets you added to ADOPTERS.md
+title: "[adoption] <Organization or project> — <use case>"
+labels: ["community", "outreach"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for telling us how you use TunaOS! Filling this out adds you to
+        [ADOPTERS.md](https://github.com/tuna-os/tunaos/blob/main/ADOPTERS.md)
+        (Production Users, Development & Evaluation, or Ecosystem & Downstream
+        Projects). We'll review it and open the ADOPTERS.md entry as a PR —
+        no need to write the markdown yourself.
+
+        See the [adoption call](https://github.com/tuna-os/tunaOS/issues/1367)
+        for why we track this.
+  - type: input
+    id: org
+    attributes:
+      label: Organization / project name
+      description: Public name to list in ADOPTERS.md
+      placeholder: "e.g. Example Corp"
+    validations:
+      required: true
+  - type: input
+    id: url
+    attributes:
+      label: Link
+      description: Website, GitHub org, or repo (public)
+      placeholder: "https://..."
+    validations:
+      required: true
+  - type: dropdown
+    id: tier
+    attributes:
+      label: Adoption tier
+      description: Which category best fits your use
+      options:
+        - Production Users (running TunaOS in production)
+        - Development & Evaluation (testing, CI, dogfooding)
+        - Ecosystem & Downstream Projects (upstream base, dependency, or relationship)
+      validations:
+        required: true
+  - type: dropdown
+    id: variant
+    attributes:
+      label: Variant(s) used
+      description: Select all that apply
+      multiple: true
+      options:
+        - Yellowfin GNOME
+        - Albacore GNOME
+        - Skipjack KDE
+        - Tromsø KDE
+        - Gurnard (Ubuntu + Pantheon)
+        - Bonito (Fedora)
+        - COSMIC
+        - XFCE Linux
+        - Niri
+        - Marlin (Arch)
+        - Guppy (Gentoo)
+        - Flounder (Debian)
+        - ARM (Apple Silicon / Snapdragon X Elite)
+        - Other
+  - type: textarea
+    id: use_case
+    attributes:
+      label: Use case
+      description: A sentence or two on how you use TunaOS (dev machines, kiosks, lab images, fleet, CI, …)
+      placeholder: "e.g. 120 developer workstations in our engineering org; fleet-managed via bootc"
+    validations:
+      required: true
+  - type: textarea
+    id: links
+    attributes:
+      label: Optional references
+      description: Blog posts, case studies, conference talks, or screenshots
+      placeholder: "https://…"
+  - type: checkboxes
+    id: confirmation
+    attributes:
+      label: Confirmation
+      options:
+        - label: I'm happy for my organization/project name and use case to appear in ADOPTERS.md
+          required: true
