@@ -1,0 +1,32 @@
+name: Renovate Automerge Policy Check
+
+# Enforces tuna-os/.github#12 against this repo's own renovate.json: a
+# syntactically valid config can still automerge major/minor updates once
+# packageRules are layered (see tunaOS#1612, tunaOS#1636) — the schema
+# validator alone would not have caught that.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "renovate.json"
+      - "scripts/check-renovate-automerge-policy.py"
+  pull_request:
+    branches: [main]
+    paths:
+      - "renovate.json"
+      - "scripts/check-renovate-automerge-policy.py"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Check Renovate automerge policy
+        run: python3 scripts/check-renovate-automerge-policy.py renovate.json
