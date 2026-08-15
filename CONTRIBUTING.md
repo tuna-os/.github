@@ -11,7 +11,7 @@ of base OS × desktop × kernel × drivers, plus installer and migration tooling
 | Image build factory | `tuna-os/tunaos`, `tuna-os/tunaos-packages`, `tuna-os/tromso` |
 | Installers | `tuna-os/bootc-installer`, `tuna-os/tuna-installer-{cosmic,kde,niri,xfce}` |
 | Migration | `tuna-os/wootc`, `tuna-os/bootc-migrate` |
-| Apps | `tuna-os/gtk-office-suite`, `tuna-os/Tavern`, `tuna-os/letters` |
+| Apps | `tuna-os/gtk-office-suite` (Letters, Tables, Decks), `tuna-os/Tavern` |
 | Docs | `tuna-os/docs` (index lives in `docs/static/flatpak/index/static`) |
 
 ## Getting started
