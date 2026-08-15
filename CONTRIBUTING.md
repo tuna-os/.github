@@ -42,7 +42,9 @@ of base OS × desktop × kernel × drivers, plus installer and migration tooling
   publish tooling, `update-index.py`). Prefer reusing it over copying.
 - **Deliberate duplication is flagged.** Some frontends intentionally
   reimplement a shared contract per language (see
-  `tunaos/docs/INSTALLER-FRONTENDS.md`). Match the contract; don't fork it.
+  `tunaos/docs/docs/bootc-installer-asahi/UNIFIED-INSTALL-CONTRACT.md` —
+  the `recipe.json` contract shared by the installer frontends). Match the
+  contract; don't fork it.
 - **Agents file `[architect]`/`[sec-check]`/`[strategist]` issues.** These are
   structural findings — treat them as prioritized backlog, not noise.
 
