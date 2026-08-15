@@ -30,7 +30,6 @@ Inspired by [Bluefin](https://projectbluefin.io) and the [Universal Blue](https:
 | [**yellowfin**](https://github.com/tuna-os/tunaOS) | AlmaLinux Kitten 10 | Closest to upstream CentOS Stream |
 | [**albacore**](https://github.com/tuna-os/tunaOS) | AlmaLinux 10 | Stable Enterprise Linux base |
 | [**skipjack**](https://github.com/tuna-os/tunaOS) | CentOS Stream 10 | Beta — upstream testing builds |
-| [**bonito-x13s**](https://github.com/tuna-os/bonito-x13s) | Fedora | Lenovo ThinkPad X13s (ARM64/Qualcomm) |
 
 ### Desktop & Hardware Options
 
@@ -48,9 +47,18 @@ ghcr.io/tuna-os/skipjack:gnome-hwe
 |---|---|
 | [tunaOS](https://github.com/tuna-os/tunaOS) | Main image builder |
 | [docs](https://github.com/tuna-os/docs) | Documentation site |
-| [chunkah](https://github.com/tuna-os/chunkah) | OCI layer optimization tool |
 | [tunaos-packages](https://github.com/tuna-os/tunaos-packages) | Cross-distro package factory — RPM + DEB repositories (formerly github-copr) |
-| [bonito-x13s](https://github.com/tuna-os/bonito-x13s) | ThinkPad X13s ARM64 image |
+
+## Archived
+
+The following repositories are **read-only / archived** — they no longer publish
+builds or releases. Their documentation pages on
+[tunaos.org](https://tunaos.org) are kept for historical reference only:
+
+| Repo | Purpose |
+|---|---|
+| [chunkah](https://github.com/tuna-os/chunkah) | OCI layer optimization tool (archived) |
+| [bonito-x13s](https://github.com/tuna-os/bonito-x13s) | ThinkPad X13s ARM64 image (archived) — see the [Bonito FAQ](https://tunaos.org/docs/faq) |
 
 ---
 
