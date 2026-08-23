@@ -30,10 +30,40 @@ runs:
   steps:
     - name: Update index
       shell: bash
+      # Inputs travel through env, never through ${{ }} interpolation into the
+      # script body. Actions substitutes expressions into the script TEXT before
+      # bash parses it, so an interpolated value is parsed as shell — quoting
+      # narrows that but does not close it, and `--tags` was unquoted outright
+      # (deliberately, to word-split a multi-tag list), which made any caller
+      # able to pass shell. As an env var the value is data, and `read -ra`
+      # does the splitting the multi-tag case actually needs.
+      env:
+        ACTION_PATH: ${{ github.action_path }}
+        OCI_DIR: ${{ inputs.oci-dir }}
+        INDEX_FILE: ${{ inputs.index-file }}
+        REPO_NAME: ${{ inputs.repo-name }}
+        REGISTRY: ${{ inputs.registry }}
+        TAGS: ${{ inputs.tags }}
       run: |
-        python3 "${{ github.action_path }}/update-index.py" \
-          --oci-dir "${{ inputs.oci-dir }}" \
-          --index-file "${{ inputs.index-file }}" \
-          --repo-name "${{ inputs.repo-name }}" \
-          --registry "${{ inputs.registry }}" \
-          --tags ${{ inputs.tags }}
+        set -euo pipefail
+
+        # OCI tag grammar, so a malformed input is a clear error here rather
+        # than a stray argument to update-index.py.
+        read -ra tag_args <<<"$TAGS"
+        if [ "${#tag_args[@]}" -eq 0 ]; then
+          echo "::error::tags input is empty" >&2
+          exit 1
+        fi
+        for tag in "${tag_args[@]}"; do
+          if ! [[ "$tag" =~ ^[A-Za-z0-9_][A-Za-z0-9._-]{0,127}$ ]]; then
+            echo "::error::invalid OCI tag: $tag" >&2
+            exit 1
+          fi
+        done
+
+        python3 "$ACTION_PATH/update-index.py" \
+          --oci-dir "$OCI_DIR" \
+          --index-file "$INDEX_FILE" \
+          --repo-name "$REPO_NAME" \
+          --registry "$REGISTRY" \
+          --tags "${tag_args[@]}"
