@@ -47,7 +47,7 @@ ghcr.io/tuna-os/skipjack:gnome-hwe
 |---|---|
 | [tunaOS](https://github.com/tuna-os/tunaOS) | Main image builder |
 | [docs](https://github.com/tuna-os/docs) | Documentation site |
-| [tunaos-packages](https://github.com/tuna-os/tunaos-packages) | Cross-distro package factory — RPM + DEB repositories (formerly github-copr) |
+| [tunaos-packages](https://github.com/tuna-os/tunaos-packages) | Cross-distro package factory — RPM + DEB repositories (formerly debian-copr) |
 
 ## Archived
 
