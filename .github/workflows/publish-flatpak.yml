@@ -136,13 +136,27 @@ jobs:
     if: inputs.publish
     runs-on: ubuntu-24.04
     steps:
-      - name: Download all arch OCI artifacts
+      # Explicit per-arch downloads, not `pattern: 'oci-*'` -- confirmed by a
+      # real failure (tuna-installer-cosmic run 33037056111) that
+      # download-artifact only nests a pattern match into a subdirectory
+      # named after the artifact when *multiple* artifacts match. With one
+      # arch (a single-match pattern), it flattens into the job's root
+      # instead, so `oci-x86_64/` never exists and the push step fails with
+      # "missing oci-x86_64". Explicit name+path downloads don't have that
+      # match-count-dependent behavior.
+      - name: Download x86_64 OCI artifact
+        if: contains(fromJSON(inputs.archs), 'x86_64')
         uses: actions/download-artifact@v8
         with:
-          pattern: 'oci-*'
-          # Each arch's OCI layout keeps its own subdirectory (from the
-          # matching upload name) -- merging them would clobber one arch's
-          # index.json/blobs with another's.
+          name: oci-x86_64
+          path: oci-x86_64
+
+      - name: Download aarch64 OCI artifact
+        if: contains(fromJSON(inputs.archs), 'aarch64')
+        uses: actions/download-artifact@v8
+        with:
+          name: oci-aarch64
+          path: oci-aarch64
 
       - name: Log in to GHCR
         env:
