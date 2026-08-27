@@ -1,0 +1,217 @@
+name: Publish Flatpak (reusable)
+
+# Canonical build -> GHCR -> central index pipeline for tuna-os flatpak apps
+# (tuna-os/tunaos#1183 recommendation #2, following the publish-flatpak-index
+# action added for tunaos#2104). Callers keep their own `on:` trigger block
+# (publish cadence differs per repo -- tags-only, main+tags, PR-gated builds,
+# etc.) and become a thin job that `uses:` this with `secrets: inherit`.
+#
+# Not used by Tavern: it has a prod/main branch split and a promotion flow
+# this workflow doesn't model. See tuna-os/tunaos#1183 for that follow-up.
+
+on:
+  workflow_call:
+    inputs:
+      app-id:
+        description: Flatpak application ID, e.g. org.tunaos.finupdate
+        required: true
+        type: string
+      manifest-path:
+        description: Path to the flatpak-builder manifest
+        required: true
+        type: string
+      repo-name:
+        description: owner/repo on the registry and in the central index, e.g. tuna-os/finupdate
+        required: true
+        type: string
+      archs:
+        description: JSON array of architectures to build, e.g. '["x86_64","aarch64"]'
+        required: false
+        type: string
+        default: '["x86_64","aarch64"]'
+      flatpak-builder-image:
+        description: "flathub-infra/flatpak-github-actions image tag (without the ghcr.io/flathub-infra/flatpak-github-actions: prefix)"
+        required: false
+        type: string
+        default: gnome-50
+      checkout-submodules:
+        required: false
+        type: boolean
+        default: false
+      attach-bundles:
+        description: Build a .flatpak bundle per arch and attach to the GitHub release on tag push
+        required: false
+        type: boolean
+        default: false
+      generate-cargo-sources:
+        description: Run flatpak-cargo-generator against cargo-lock-path before building
+        required: false
+        type: boolean
+        default: false
+      cargo-lock-path:
+        required: false
+        type: string
+        default: Cargo.lock
+      cargo-sources-output:
+        required: false
+        type: string
+        default: build-aux/cargo-sources.json
+      publish:
+        description: Push to GHCR and update the central index. Set false for build-only validation (e.g. on pull_request).
+        required: false
+        type: boolean
+        default: true
+      registry:
+        required: false
+        type: string
+        default: ghcr.io
+    secrets:
+      FLATPAK_INDEX_TOKEN:
+        required: true
+
+jobs:
+  build-oci:
+    name: Build OCI (${{ matrix.arch }})
+    runs-on: ${{ matrix.arch == 'aarch64' && 'ubuntu-24.04-arm' || 'ubuntu-24.04' }}
+    strategy:
+      fail-fast: false
+      matrix:
+        arch: ${{ fromJSON(inputs.archs) }}
+    container:
+      image: ghcr.io/flathub-infra/flatpak-github-actions:${{ inputs.flatpak-builder-image }}
+      options: --privileged
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          submodules: ${{ inputs.checkout-submodules }}
+
+      - name: Generate offline cargo sources
+        if: inputs.generate-cargo-sources
+        run: |
+          pip3 install --break-system-packages aiohttp toml || pip3 install aiohttp toml
+          curl -fsSLo /tmp/flatpak-cargo-generator.py \
+            https://raw.githubusercontent.com/flatpak/flatpak-builder-tools/master/cargo/flatpak-cargo-generator.py
+          python3 /tmp/flatpak-cargo-generator.py "${{ inputs.cargo-lock-path }}" \
+            -o "${{ inputs.cargo-sources-output }}"
+
+      - name: Build
+        # `uses:` can't take an expression (actionlint: "context inputs is
+        # not allowed here"), so this can't be a per-caller input. Pinned to
+        # v6.7 -- the newest tag, and the one dualcut was already relying on
+        # in production; the other five repos were on the older v6 with no
+        # comment explaining an intentional avoidance of v6.7, so this is a
+        # bump for them, not a downgrade for anyone.
+        uses: flatpak/flatpak-github-actions/flatpak-builder@v6.7
+        with:
+          manifest-path: ${{ inputs.manifest-path }}
+          cache-key: flatpak-builder-${{ inputs.repo-name }}-${{ github.sha }}-${{ matrix.arch }}
+          bundle: ${{ inputs.attach-bundles && format('{0}-{1}.flatpak', inputs.app-id, matrix.arch) || '' }}
+          build-bundle: ${{ inputs.attach-bundles }}
+          upload-artifact: false
+          arch: ${{ matrix.arch }}
+
+      - name: Export OCI
+        run: |
+          flatpak build-bundle --oci --arch=${{ matrix.arch }} \
+            repo oci-${{ matrix.arch }} "${{ inputs.app-id }}"
+
+      - name: Upload OCI artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: oci-${{ matrix.arch }}
+          path: oci-${{ matrix.arch }}/
+          retention-days: 1
+
+      - name: Upload bundle artifact
+        if: inputs.attach-bundles
+        uses: actions/upload-artifact@v7
+        with:
+          name: bundle-${{ matrix.arch }}
+          path: ${{ inputs.app-id }}-${{ matrix.arch }}.flatpak
+          retention-days: 7
+
+  publish:
+    name: Publish
+    needs: build-oci
+    if: inputs.publish
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Download all arch OCI artifacts
+        uses: actions/download-artifact@v8
+        with:
+          pattern: 'oci-*'
+          # Each arch's OCI layout keeps its own subdirectory (from the
+          # matching upload name) -- merging them would clobber one arch's
+          # index.json/blobs with another's.
+
+      - name: Log in to GHCR
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Some runner fleets' default container auth path
+          # (/run/containers/$UID/auth.json) isn't writable.
+          REGISTRY_AUTH_FILE: ${{ runner.temp }}/auth.json
+        run: |
+          echo "$GITHUB_TOKEN" | skopeo login "${{ inputs.registry }}" -u "${{ github.actor }}" --password-stdin
+
+      - name: Push OCI to registry
+        env:
+          REGISTRY_AUTH_FILE: ${{ runner.temp }}/auth.json
+        run: |
+          set -euo pipefail
+          read -ra archs <<<"$(python3 -c 'import json,sys; print(*json.loads(sys.argv[1]))' '${{ inputs.archs }}')"
+          primary="${archs[0]}"
+          version_tag=""
+          if [[ "${{ github.ref }}" == refs/tags/* ]]; then
+            version_tag="${{ github.ref_name }}"
+          fi
+          for arch in "${archs[@]}"; do
+            dir="oci-${arch}"
+            [ -d "$dir" ] || { echo "::error::missing $dir"; exit 1; }
+            skopeo copy "oci:${dir}" "docker://${{ inputs.registry }}/${{ inputs.repo-name }}:latest-${arch}"
+            if [ -n "$version_tag" ]; then
+              skopeo copy "oci:${dir}" "docker://${{ inputs.registry }}/${{ inputs.repo-name }}:${version_tag}-${arch}"
+            fi
+          done
+          # :latest (no arch suffix) tracks the primary arch, for anything
+          # that pulls this image by tag without knowing about the
+          # arch-qualified convention.
+          skopeo copy "oci:oci-${primary}" "docker://${{ inputs.registry }}/${{ inputs.repo-name }}:latest"
+
+      # One publish-flatpak-index call per arch (only x86_64/aarch64 exist
+      # today across every tuna-os app) -- each call is its own independent
+      # clone/retry/push cycle, same as before consolidation.
+      - name: Update central index — x86_64
+        if: contains(fromJSON(inputs.archs), 'x86_64')
+        uses: tuna-os/.github/.github/actions/publish-flatpak-index@main
+        with:
+          oci-dir: oci-x86_64
+          repo-name: ${{ inputs.repo-name }}
+          registry: ${{ inputs.registry }}
+          tags: latest
+          token: ${{ secrets.FLATPAK_INDEX_TOKEN }}
+
+      - name: Update central index — aarch64
+        if: contains(fromJSON(inputs.archs), 'aarch64')
+        uses: tuna-os/.github/.github/actions/publish-flatpak-index@main
+        with:
+          oci-dir: oci-aarch64
+          repo-name: ${{ inputs.repo-name }}
+          registry: ${{ inputs.registry }}
+          tags: latest
+          token: ${{ secrets.FLATPAK_INDEX_TOKEN }}
+
+  release-bundles:
+    name: Attach bundles to release
+    needs: publish
+    if: inputs.attach-bundles && startsWith(github.ref, 'refs/tags/')
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          pattern: 'bundle-*'
+          merge-multiple: true
+      - name: Upload to release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release upload "${GITHUB_REF_NAME}" --clobber --repo "${{ inputs.repo-name }}" -- *.flatpak
