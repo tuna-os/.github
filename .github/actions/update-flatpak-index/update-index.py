@@ -3,6 +3,16 @@ import argparse
 import json
 from pathlib import Path
 
+# Labels that must survive into index/static. Flatpak reads org.flatpak.*
+# to resolve and install a ref, and org.freedesktop.appstream.* to build the
+# remote's AppStream catalogue (name, summary, icon, licence, screenshots) --
+# what software centres like Bazaar/GNOME Software/KDE Discover show instead
+# of a bare application ID. `flatpak build-bundle --oci` puts both families
+# of labels on the image; this script was only keeping the first, so every
+# republish silently blanked the app in software centres. Matches
+# tuna-os/flatpak-index's scripts/oci.py keep_label().
+KEEP_LABEL_PREFIXES = ("org.flatpak.", "org.freedesktop.appstream.")
+
 def main():
     parser = argparse.ArgumentParser(description="Update Flatpak OCI index file from local OCI layout.")
     parser.add_argument("--oci-dir", required=True, help="Path to local OCI layout directory")
@@ -74,7 +84,7 @@ def main():
         "Architecture": architecture,
         "Tags": args.tags,
         "Labels": {
-            k: v for k, v in labels.items() if k.startswith("org.flatpak.")
+            k: v for k, v in labels.items() if k.startswith(KEEP_LABEL_PREFIXES)
         }
     }
 
