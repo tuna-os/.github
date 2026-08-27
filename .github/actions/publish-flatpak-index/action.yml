@@ -1,0 +1,123 @@
+name: "Publish Flatpak OCI Index"
+description: >-
+  Clones the central flatpak index repo, updates one app's entry via
+  update-flatpak-index, and pushes -- retrying against concurrent writers
+  from other app repos instead of failing the job on the first rejected
+  push. Every tuna-os app publish workflow writes to the same docs-repo
+  branch; without a retry loop, two apps publishing close together race and
+  the loser's release silently never reaches the served index even though
+  its OCI image already landed in the registry.
+
+inputs:
+  oci-dir:
+    description: Path to the local OCI layout directory (must contain index.json)
+    required: true
+  index-file:
+    description: Path to the index/static file within docs-repo
+    required: false
+    default: static/flatpak/index/static
+  repo-name:
+    description: Repository name on the registry, e.g. tuna-os/tavern
+    required: true
+  registry:
+    description: Registry host used to build the index's Registry field
+    required: false
+    default: ghcr.io
+  tags:
+    description: Space-separated list of tags for this image entry
+    required: false
+    default: latest
+  docs-repo:
+    description: owner/repo of the central index repo to clone and push to
+    required: false
+    default: tuna-os/docs
+  token:
+    description: Token with push access to docs-repo (FLATPAK_INDEX_TOKEN)
+    required: true
+  max-attempts:
+    description: Max push attempts before failing the step
+    required: false
+    default: "8"
+
+runs:
+  using: composite
+  steps:
+    - name: Update index and push (retry on race with other publishers)
+      shell: bash
+      env:
+        ACTION_PATH: ${{ github.action_path }}
+        OCI_DIR: ${{ inputs.oci-dir }}
+        INDEX_FILE: ${{ inputs.index-file }}
+        REPO_NAME: ${{ inputs.repo-name }}
+        REGISTRY: ${{ inputs.registry }}
+        TAGS: ${{ inputs.tags }}
+        DOCS_REPO: ${{ inputs.docs-repo }}
+        FLATPAK_INDEX_TOKEN: ${{ inputs.token }}
+        MAX_ATTEMPTS: ${{ inputs.max-attempts }}
+      run: |
+        set -euo pipefail
+
+        read -ra tag_args <<<"$TAGS"
+        if [ "${#tag_args[@]}" -eq 0 ]; then
+          echo "::error::tags input is empty" >&2
+          exit 1
+        fi
+
+        WORKDIR="$(mktemp -d)"
+        INDEX_REPO="$WORKDIR/index-repo"
+
+        clone_docs() {
+          rm -rf "$INDEX_REPO"
+          git clone --depth 1 "https://github.com/${DOCS_REPO}.git" "$INDEX_REPO"
+          # Header-based auth so the token never lands in .git/config, `git
+          # remote -v`, or process listings.
+          git -C "$INDEX_REPO" config --local http.extraheader \
+            "AUTHORIZATION: basic $(printf 'x-access-token:%s' "$FLATPAK_INDEX_TOKEN" | base64 -w0)"
+          git -C "$INDEX_REPO" config user.name "github-actions[bot]"
+          git -C "$INDEX_REPO" config user.email "github-actions[bot]@users.noreply.github.com"
+        }
+
+        clone_docs
+
+        attempt=1
+        while :; do
+          python3 "$ACTION_PATH/../update-flatpak-index/update-index.py" \
+            --oci-dir "$OCI_DIR" \
+            --index-file "$INDEX_REPO/$INDEX_FILE" \
+            --repo-name "$REPO_NAME" \
+            --registry "$REGISTRY" \
+            --tags "${tag_args[@]}"
+
+          pushd "$INDEX_REPO" >/dev/null
+          git add "$INDEX_FILE"
+          if git diff --cached --quiet; then
+            echo "No index changes for $REPO_NAME"
+            popd >/dev/null
+            break
+          fi
+          git commit -q -m "chore(flatpak): update ${REPO_NAME} OCI index"
+
+          if git push origin HEAD:main; then
+            echo "Pushed index update for $REPO_NAME (attempt $attempt)"
+            popd >/dev/null
+            break
+          fi
+          popd >/dev/null
+
+          if [ "$attempt" -ge "$MAX_ATTEMPTS" ]; then
+            echo "::error::push rejected after $MAX_ATTEMPTS attempts (concurrent writers to $DOCS_REPO) -- giving up" >&2
+            exit 1
+          fi
+
+          # Lost the race to another app's publish. Re-clone onto the new
+          # tip and regenerate this app's entry against it -- the index
+          # update is a targeted per-repo-name key merge, not a full
+          # rewrite, so replaying it on the fresh base is safe even though
+          # another app's entry changed underneath us.
+          echo "Push rejected (another publisher won the race), retrying ($attempt/$MAX_ATTEMPTS)..."
+          sleep "$(( (RANDOM % 5) + attempt ))"
+          clone_docs
+          attempt=$((attempt + 1))
+        done
+
+        rm -rf "$WORKDIR"
