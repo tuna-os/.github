@@ -19,11 +19,14 @@
 
 ---
 
-Tuna OS brings a **modern cloud-native desktop** to Enterprise Linux. We take the stability of AlmaLinux and CentOS Stream and layer on the latest GNOME, KDE Plasma, COSMIC, and Niri desktops — shipped as immutable [bootc](https://containers.github.io/bootc/) container images.
+Tuna OS brings a **modern cloud-native desktop** to Enterprise Linux and
+community distributions. Images combine an immutable
+[bootc](https://containers.github.io/bootc/) base with the desktop and hardware
+options supported by each distribution.
 
 Inspired by [Bluefin](https://projectbluefin.io) and the [Universal Blue](https://universal-blue.org/) community.
 
-## Images
+## Featured Enterprise Linux images
 
 | Image | Base | Description |
 |---|---|---|
@@ -31,9 +34,16 @@ Inspired by [Bluefin](https://projectbluefin.io) and the [Universal Blue](https:
 | [**albacore**](https://github.com/tuna-os/tunaOS) | AlmaLinux 10 | Stable Enterprise Linux base |
 | [**skipjack**](https://github.com/tuna-os/tunaOS) | CentOS Stream 10 | Beta — upstream testing builds |
 
-### Desktop & Hardware Options
+These are the project's core Enterprise Linux images. See the canonical
+[image matrix](https://github.com/tuna-os/tunaOS#choose-your-image) for every
+available image family, base distribution, desktop, architecture, and registry
+path.
 
-Every image ships multiple desktops (`gnome`, `kde`, `cosmic`, `niri`) and hardware variants (`-hwe` for newer kernels, `-nvidia` for NVIDIA/CUDA).
+### Desktop and hardware options
+
+Desktop and hardware options vary by image. Common tags combine a desktop such
+as `gnome`, `kde`, `cosmic`, or `niri` with an optional hardware suffix such as
+`-hwe` or `-nvidia`. Check the image matrix before selecting a tag.
 
 ```
 ghcr.io/tuna-os/yellowfin:gnome
