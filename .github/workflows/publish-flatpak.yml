@@ -101,7 +101,7 @@ jobs:
         # in production; the other five repos were on the older v6 with no
         # comment explaining an intentional avoidance of v6.7, so this is a
         # bump for them, not a downgrade for anyone.
-        uses: flatpak/flatpak-github-actions/flatpak-builder@v6.7
+        uses: flatpak/flatpak-github-actions/flatpak-builder@v6.8
         with:
           manifest-path: ${{ inputs.manifest-path }}
           cache-key: flatpak-builder-${{ inputs.repo-name }}-${{ github.sha }}-${{ matrix.arch }}
