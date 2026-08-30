@@ -1,6 +1,6 @@
 # Org-wide ROADMAP inventory
 
-**Last verified**: 2026-08-14 · **Source**: `gh api repos/tuna-os/<repo>/contents/ROADMAP.md?ref=<default_branch>` against every active (non-archived) repo in the `tuna-os` org.
+**Last verified**: 2026-08-30 · **Source**: `gh api repos/tuna-os/<repo>/contents/ROADMAP.md?ref=<default_branch>` against every active (non-archived) repository in the 39-repository Tuna OS planning scope.
 
 tunaos#1295 and tunaos#1361 both found the same problem from different
 angles: nobody — human or agent — could see at a glance which repos in the
@@ -13,7 +13,13 @@ single-source-of-truth inventory that section should be checked against.
 2026-08-12, confirmed via the GitHub API (`archived: true`). Archived repos
 take no further planning by definition.
 
-## Coverage: 16 / 37 active repos
+## Coverage: 36 / 37 active repos
+
+Roadmap coverage grew from 16/37 on August 14 to 36/37 on August 30. The
+remaining repository, `kde-build-meta`, is documented as superseded by
+`tromso`; its open retirement tracker (`tuna-os/kde-build-meta#19`) is the
+appropriate lifecycle decision instead of creating a roadmap for inactive
+work.
 
 | Repo | Default branch | ROADMAP.md? |
 |---|---|---|
@@ -33,27 +39,27 @@ take no further planning by definition.
 | tunaos-packages | main | ✅ |
 | wootc | main | ✅ |
 | xfce-linux | main | ✅ |
-| .github | main | ❌ |
-| bootc-installer-asahi | main | ❌ |
-| branding | main | ❌ |
-| bst-ci | main | ❌ |
-| changelog-action | master | ❌ |
-| debian-copr | main | ❌ |
-| finupdate | main | ❌ |
-| fisherman | dev | ❌ |
-| flatpak-index | main | ❌ |
-| homebrew-tap | main | ❌ |
+| .github | main | ✅ |
+| bootc-installer-asahi | main | ✅ |
+| branding | main | ✅ |
+| bst-ci | main | ✅ |
+| changelog-action | master | ✅ |
+| debian-copr | main | ✅ |
+| finupdate | main | ✅ |
+| fisherman | dev | ✅ |
+| flatpak-index | main | ✅ |
+| homebrew-tap | main | ✅ |
 | kde-build-meta | master | ❌ |
-| mandelbrot | main | ❌ |
-| mariner | master | ❌ |
-| remora | main | ❌ |
-| scoop-bucket | main | ❌ |
-| suite-common | main | ❌ |
-| suite-common-rust | main | ❌ |
-| tuna-installer-cosmic | main | ❌ |
-| tuna-installer-kde | main | ❌ |
-| tuna-installer-niri | main | ❌ |
-| tuna-installer-xfce | main | ❌ |
+| mandelbrot | main | ✅ |
+| mariner | master | ✅ |
+| remora | main | ✅ |
+| scoop-bucket | main | ✅ |
+| suite-common | main | ✅ |
+| suite-common-rust | main | ✅ |
+| tuna-installer-cosmic | main | ✅ |
+| tuna-installer-kde | main | ✅ |
+| tuna-installer-niri | main | ✅ |
+| tuna-installer-xfce | main | ✅ |
 
 ## A note on "ROADMAP.md exists" vs. reachable
 
@@ -67,8 +73,9 @@ above (`bootc-installer`, `fisherman`, `changelog-action`, `kde-build-meta`,
 
 ## Regenerating this table
 
-This is a manual, point-in-time snapshot, not yet an automated one. To
-refresh it:
+This is a manual, point-in-time snapshot, not yet an automated one. Until the
+automation tracked by `tuna-os/tunaos#1295` lands, refresh it at each quarter
+boundary and after any roadmap or repository lifecycle campaign:
 
 ```bash
 gh repo list tuna-os --limit 200 --json name,isArchived --jq \
