@@ -1,6 +1,6 @@
 # Organization Enablement Roadmap
 
-**Last updated**: 2026-08-22 | **Maintainer**: Tuna OS organization maintainers
+**Last updated**: 2026-08-30 | **Maintainer**: Tuna OS organization maintainers
 
 ## Mission
 
@@ -21,7 +21,7 @@ here affect the contributor experience across the portfolio.
 | Priority | Item | Tracking | Status |
 |---|---|---|---|
 | P0 | Make inherited issue forms repository-neutral and keep image-specific fields local to `tuna-os/tunaos` | #32 | Not started |
-| P1 | Automate default-branch-aware refreshes of `ROADMAP-INDEX.md` | tuna-os/tunaos#1295 | Proposed |
+| P1 | Automate default-branch-aware refreshes of `ROADMAP-INDEX.md` | tuna-os/tunaos#1295 | Proposed; manual coverage reached 36/37 |
 | P1 | Complete adoption of the canonical Flatpak index action and retire the interim copy-drift guard | tuna-os/tunaos#1183 | In progress |
 | P2 | Define an owner and review cadence for org-level community-health files | #32 | Proposed |
 
@@ -30,7 +30,7 @@ here affect the contributor experience across the portfolio.
 | Goal | Success measure | Tracking |
 |---|---|---|
 | Correct the shared issue-entry funnel | Shared forms collect repository-neutral context; image-specific forms live in `tuna-os/tunaos`; representative app, library, installer, and CI repositories are verified | #32 |
-| Make portfolio planning observable | `ROADMAP-INDEX.md` has a documented owner and refresh cadence; automation work is separately scoped | tuna-os/tunaos#1295 |
+| Make portfolio planning observable | Maintain the verified 36/37 active-repository baseline; resolve the superseded `kde-build-meta` lifecycle; automation work is separately scoped | tuna-os/tunaos#1295, tuna-os/kde-build-meta#19 |
 
 ## 2026 Q4 Goals
 
