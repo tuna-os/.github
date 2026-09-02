@@ -1,6 +1,6 @@
 # Organization Enablement Roadmap
 
-**Last updated**: 2026-08-30 | **Maintainer**: Tuna OS organization maintainers
+**Last updated**: 2026-09-02 | **Maintainer**: Tuna OS organization maintainers
 
 ## Mission
 
@@ -23,6 +23,7 @@ here affect the contributor experience across the portfolio.
 | P0 | Make inherited issue forms repository-neutral and keep image-specific fields local to `tuna-os/tunaos` | #32 | Not started |
 | P1 | Automate default-branch-aware refreshes of `ROADMAP-INDEX.md` | tuna-os/tunaos#1295 | Proposed; manual coverage reached 36/37 |
 | P1 | Complete adoption of the canonical Flatpak index action and retire the interim copy-drift guard | tuna-os/tunaos#1183 | In progress |
+| P1 | Give inherited planning artifacts a named human owner: remove automation bylines from the starter template and sweep the 37 committed files across 19 repositories that inherited them | #54 | Template fixed; repository sweep not started |
 | P2 | Define an owner and review cadence for org-level community-health files | #32 | Proposed |
 
 ## 2026 Q3 Exit Goals
@@ -39,6 +40,7 @@ here affect the contributor experience across the portfolio.
 | Prevent roadmap inventory drift | A scheduled, default-branch-aware check proposes reviewable updates when repository coverage changes | tuna-os/tunaos#1295 |
 | Reduce duplicated release tooling | Callers migrate to the canonical Flatpak index action and the temporary drift guard can be removed | tuna-os/tunaos#1183 |
 | Measure contributor-funnel health | Quarterly review records issue-form overrides, misrouted reports, and first-response outcomes | #32 |
+| Make governance documents attributable to people | No committed file in the portfolio attributes org policy to an automation agent; every roadmap names a human or team owner | #54 |
 
 ## Decision Principles
 
@@ -62,4 +64,5 @@ repositories inherit the affected org-level default and link the tracking
 issue used to coordinate any repository-local follow-up.
 
 ---
-*Maintained as an organization-level planning artifact by the strategist agent.*
+*Maintained as an organization-level planning artifact. Changes land by PR against this
+file; see [CONTRIBUTING.md](CONTRIBUTING.md).*
