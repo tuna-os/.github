@@ -1,0 +1,46 @@
+name: Add Help Wanted Label (reusable)
+
+# Automatically adds 'help wanted' label to unassigned issues when labeled.
+#
+# Org-level reusable workflow adopting Hive practice (epic #2250, issue #2260).
+
+on:
+  workflow_call:
+
+permissions:
+  contents: read
+
+jobs:
+  add-help-wanted:
+    name: Add Help Wanted
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+    steps:
+      - name: Process help wanted label
+        uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea # v7.0.1
+        continue-on-error: true
+        with:
+          script: |
+            const issue = context.payload.issue;
+            if (!issue) return;
+
+            const labels = (issue.labels || []).map(l => l.name);
+            const hasHelpLabel = labels.some(l =>
+              l === 'help wanted' || l === 'good first issue'
+            );
+
+            if (hasHelpLabel) {
+              console.log('Issue already has help-wanted or good-first-issue label');
+              return;
+            }
+
+            if (!issue.assignee && !(issue.assignees && issue.assignees.length)) {
+              await github.rest.issues.addLabels({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issue.number,
+                labels: ['help wanted']
+              });
+              console.log('Added help-wanted label to issue #' + issue.number);
+            }

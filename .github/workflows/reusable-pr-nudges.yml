@@ -1,0 +1,59 @@
+name: PR Reminders (reusable)
+
+# Advisory reminders for a pull request, derived from the files it touches.
+# Runs the caller repository's nudge script (default: .github/scripts/pr-nudges.sh).
+#
+# Org-level reusable workflow adopting Hive practice #11 (epic #2250, issue #2260).
+# Never fails a PR: delivers reminders via step summary and annotation first, plus a
+# PR comment when permissions allow.
+
+on:
+  workflow_call:
+    inputs:
+      script-path:
+        description: Path to the nudge script in the caller repository
+        required: false
+        type: string
+        default: .github/scripts/pr-nudges.sh
+    secrets:
+      token:
+        description: GitHub token (defaults to GITHUB_TOKEN)
+        required: false
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  remind:
+    name: reminders
+    # Drafts are not ready for the question; dependency bumps never need it.
+    if: >-
+      github.event.pull_request.draft == false &&
+      github.actor != 'renovate[bot]' &&
+      github.actor != 'dependabot[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          sparse-checkout: ${{ inputs.script-path }}
+          sparse-checkout-cone-mode: false
+
+      - name: Derive and deliver the reminders
+        env:
+          GH_TOKEN: ${{ secrets.token || secrets.GITHUB_TOKEN }}
+          PR: ${{ github.event.pull_request.number }}
+          REPO: ${{ github.repository }}
+          IS_FORK: ${{ github.event.pull_request.head.repo.fork }}
+          SCRIPT_PATH: ${{ inputs.script-path }}
+        run: |
+          if [[ ! -f "${SCRIPT_PATH}" ]]; then
+            echo "Nudge script ${SCRIPT_PATH} not found in repository; skipping"
+            exit 0
+          fi
+          # Reading the file list needs no write permission, so it works on
+          # forks; --paginate so a large PR cannot hide a path on page two.
+          gh api --paginate "repos/${REPO}/pulls/${PR}/files" --jq '.[].filename' \
+            | bash "${SCRIPT_PATH}" --deliver
