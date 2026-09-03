@@ -10,11 +10,13 @@ on:
     branches: [main]
     paths:
       - "renovate.json"
+      - "project-starter/renovate.json"
       - "scripts/check-renovate-automerge-policy.py"
   pull_request:
     branches: [main]
     paths:
       - "renovate.json"
+      - "project-starter/renovate.json"
       - "scripts/check-renovate-automerge-policy.py"
   workflow_dispatch:
 
@@ -28,5 +30,12 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+      # project-starter/renovate.json as well as this repo's own. The
+      # template is copied verbatim into every scaffolded repo, so a policy
+      # violation there propagates to repos that will never run this check --
+      # which makes it the copy that matters most, and the one that was not
+      # being checked.
       - name: Check Renovate automerge policy
-        run: python3 scripts/check-renovate-automerge-policy.py renovate.json
+        run: |
+          python3 scripts/check-renovate-automerge-policy.py renovate.json
+          python3 scripts/check-renovate-automerge-policy.py project-starter/renovate.json
