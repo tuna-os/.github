@@ -8,14 +8,14 @@ security reports seriously.
 **Do not open a public issue** for security vulnerabilities. Instead, use
 GitHub's private vulnerability reporting:
 
-1. Go to the affected repository (e.g. https://github.com/tuna-os/tunaos).
+1. Go to the affected repository (e.g. https://github.com/tuna-os/tunaOS).
 2. Open **Security → Report a vulnerability** (or **Advisories → New draft
    security advisory**).
 3. Include: affected repo + component, a minimal reproduction, impact, and —
    if known — a suggested fix.
 
 Alternatively, contact the maintainers privately via a GitHub **Security
-Advisory** in `tuna-os/tunaos` if the affected repo does not have reporting
+Advisories** in `tuna-os/tunaOS` if the affected repo does not have reporting
 enabled.
 
 ## What to report
