@@ -1,6 +1,6 @@
 # Org-wide ROADMAP inventory
 
-**Last verified**: 2026-08-30 · **Source**: `gh api repos/tuna-os/<repo>/contents/ROADMAP.md?ref=<default_branch>` against every active (non-archived) repository in the 39-repository Tuna OS planning scope.
+**Last verified**: 2026-09-02 · **Source**: `gh api repos/tuna-os/<repo>/contents/ROADMAP.md?ref=<default_branch>` against every active (non-archived) repository returned by `gh repo list tuna-os --limit 200`, which is currently **40** repositories.
 
 tunaos#1295 and tunaos#1361 both found the same problem from different
 angles: nobody — human or agent — could see at a glance which repos in the
@@ -13,18 +13,38 @@ single-source-of-truth inventory that section should be checked against.
 2026-08-12, confirmed via the GitHub API (`archived: true`). Archived repos
 take no further planning by definition.
 
-## Coverage: 36 / 37 active repos
+**Scope correction (2026-09-02)**: every table below this line through
+2026-08-30 reported a denominator of 37. The real active count was larger:
+`spindle`, `blueshell` and `hive` are active, non-archived `tuna-os`
+repositories that had no row at all — they were not the `❌`, they were
+absent. `spindle` in particular was created 2026-08-26, four days before the
+last verification pass, and is now the highest-velocity repository in the org
+(266 commits and 227 merged PRs in its first seven days). The denominator is a
+scope problem, not a coverage problem: a table that only re-checks the repos it
+already lists cannot notice a repository being created. See
+`tuna-os/.github#52`.
 
-Roadmap coverage grew from 16/37 on August 14 to 36/37 on August 30. The
-remaining repository, `kde-build-meta`, is documented as superseded by
-`tromso`; its open retirement tracker (`tuna-os/kde-build-meta#19`) is the
-appropriate lifecycle decision instead of creating a roadmap for inactive
-work.
+## Coverage: 36 / 40 active repos
+
+Roadmap coverage grew from 16/37 on August 14 to 36/37 on August 30 against the
+scope known at the time; re-measured against the full active set on September 2
+it is **36 / 40**. The four repositories without a roadmap:
+
+- `kde-build-meta` — documented as superseded by `tromso`; its open retirement
+  tracker (`tuna-os/kde-build-meta#19`) is the appropriate lifecycle decision
+  instead of creating a roadmap for inactive work.
+- `spindle` — a Matrix homeserver, and the first network-facing multi-tenant
+  server software in the org. A roadmap is proposed in
+  `tuna-os/spindle` (branch `strategy/spindle-roadmap`); this row flips once it
+  merges.
+- `blueshell` — active, default branch `ptyxis-port`, not `main`.
+- `hive` — active, default branch `v4`, not `main`.
 
 | Repo | Default branch | ROADMAP.md? |
 |---|---|---|
 | Tavern | main | ✅ |
 | bluefin-cli | main | ✅ |
+| blueshell | ptyxis-port | ❌ |
 | bootc-installer | dev | ✅ (tuna-os/bootc-installer#14, merged 08-14) |
 | bootc-migrate | main | ✅ |
 | corral | main | ✅ |
@@ -48,12 +68,14 @@ work.
 | finupdate | main | ✅ |
 | fisherman | dev | ✅ |
 | flatpak-index | main | ✅ |
+| hive | v4 | ❌ |
 | homebrew-tap | main | ✅ |
 | kde-build-meta | master | ❌ |
 | mandelbrot | main | ✅ |
 | mariner | master | ✅ |
 | remora | main | ✅ |
 | scoop-bucket | main | ✅ |
+| spindle | main | ❌ (proposed: `strategy/spindle-roadmap`) |
 | suite-common | main | ✅ |
 | suite-common-rust | main | ✅ |
 | tuna-installer-cosmic | main | ✅ |
@@ -69,7 +91,18 @@ was merged to `main` while the repo's actual default branch is `dev` (82
 commits ahead). This table checks `ref=<default_branch>` explicitly, not a
 hardcoded `main`, specifically to avoid repeating that miss — several repos
 above (`bootc-installer`, `fisherman`, `changelog-action`, `kde-build-meta`,
-`mariner`) don't default to `main`.
+`mariner`, `blueshell`, `hive`) don't default to `main`.
+
+## A note on "every repo is listed" vs. every repo
+
+There is a second failure mode above the first, and the September 2 pass hit
+it: a row can be wrong, but a *missing row* is silent. Three active repos were
+outside this table for as long as they had existed, so nothing in the inventory
+— not the count, not the `❌` list, not the `tunaos/ROADMAP.md` Community
+section that checks against it — could report them. Re-running the block below
+starts from `gh repo list`, not from the rows already here, precisely so that
+repository creation is picked up rather than only roadmap absence. Refresh the
+scope, not just the answers.
 
 ## Regenerating this table
 
@@ -107,4 +140,6 @@ CI run to validate, not just local reasoning about the script.
 
 - tunaos#1295 — original coverage-gap finding (5/38 at filing)
 - tunaos#1361 — inventory-drift finding + bootc-installer stranded-branch bug
+- tuna-os/.github#52 — scope gap: `spindle`, `blueshell` and `hive` absent from
+  the table entirely (37 → 40 denominator correction, 2026-09-02)
 - tunaos/ROADMAP.md Community section — should track this table's count
