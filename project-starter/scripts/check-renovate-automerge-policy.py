@@ -1,8 +1,14 @@
 #!/usr/bin/env python3
-"""Fail if a repo's renovate.json would automerge a major or minor update.
+"""Fail if a repo's renovate.json would automerge a major update.
 
-Org policy (tuna-os/.github#12): only patch/pin/pinDigest/digest updates may
-automerge. major/minor updates always need human review before merge.
+Org policy (tuna-os/.github#12): minor/patch/pin/pinDigest/digest updates may
+automerge once CI is green. major updates always need human review before
+merge.
+
+Minor was moved out of the blocked set deliberately, not by erosion: it is the
+bulk of the fleet's dependency traffic, and holding it for review produced a
+review queue nobody read, which is its own failure mode. Major stays blocked
+because that is the class both incidents below were actually about.
 
 This is deliberately conservative, not a full Renovate rule-matching engine:
 it ignores matchDatasources/matchPackageNames/matchManagers scoping and
@@ -19,7 +25,7 @@ Usage:
     check-renovate-automerge-policy.py [path/to/renovate.json]
 
 Exit codes:
-    0  compliant (no rule automerges major/minor)
+    0  compliant (no rule automerges major)
     1  violation found (or the file could not be parsed)
 """
 
@@ -28,7 +34,7 @@ from __future__ import annotations
 import json
 import sys
 
-RISKY_TYPES = {"major", "minor"}
+RISKY_TYPES = {"major"}
 
 # Renovate matcher keys that narrow a packageRule to a subset of packages,
 # beyond matchUpdateTypes. A rule that uses any of these can only ever
@@ -63,8 +69,8 @@ def check(config: dict) -> list[str]:
     """Return a list of human-readable violation descriptions, empty if none."""
     violations = {}  # risky type -> description of the rule that caused it
 
-    # Track the running automerge state for "major" and "minor" as if a
-    # real major/minor update were being resolved: start from the top-level
+    # Track the running automerge state for each risky type as if a real
+    # update of that type were being resolved: start from the top-level
     # default, then apply each *unscoped* packageRule in order (later rules
     # win), exactly like Renovate itself layers config. Scoped rules are
     # judged independently instead of participating in this chain -- see
@@ -77,7 +83,7 @@ def check(config: dict) -> list[str]:
             continue
         match_types = rule.get("matchUpdateTypes")
         # No matchUpdateTypes at all means the rule applies to every update
-        # type, major/minor included.
+        # type, major included.
         applies_to = RISKY_TYPES if match_types is None else RISKY_TYPES & set(match_types)
         if not applies_to:
             continue
@@ -110,7 +116,7 @@ def check(config: dict) -> list[str]:
             out.append(
                 f"'{t}' updates would automerge, set by {source} "
                 f"-- org policy (tuna-os/.github#12) requires human review "
-                f"for major/minor updates."
+                f"for major updates."
             )
     return out
 
@@ -131,7 +137,7 @@ def main() -> int:
             print(f"  - {v}", file=sys.stderr)
         return 1
 
-    print(f"OK: {path} does not automerge major/minor updates.")
+    print(f"OK: {path} does not automerge major updates.")
     return 0
 
 

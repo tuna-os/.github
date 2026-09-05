@@ -1,0 +1,28 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "description": "Shared Renovate policy for every tuna-os repository. Repos consume it with \"extends\": [\"local>tuna-os/.github\"] and add only what is genuinely repo-specific (custom managers, per-package holds, postUpgradeTasks).",
+  "extends": [
+    "config:recommended"
+  ],
+  "platformAutomerge": true,
+  "packageRules": [
+    {
+      "description": "Routine bumps merge themselves once the repo's own CI is green. platformAutomerge uses GitHub's native auto-merge, so branch protection still gates every one of them -- nothing is bypassed, it just does not wait for a human to press the button.",
+      "matchUpdateTypes": [
+        "minor",
+        "patch",
+        "pin",
+        "pinDigest",
+        "digest"
+      ],
+      "automerge": true
+    },
+    {
+      "description": "Major updates always stop for human review. This is the half of tuna-os/.github#12 that stays: tunaOS#1612 and #1636 were both broad-automerge incidents, and a major bump is the class that breaks a build in ways CI does not always catch.",
+      "matchUpdateTypes": [
+        "major"
+      ],
+      "automerge": false
+    }
+  ]
+}
