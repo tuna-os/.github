@@ -1,0 +1,86 @@
+name: Lint (reusable)
+
+# Reusable lint workflow for tuna-os org repositories.
+# Runs static analysis on shell scripts, YAML, JSON, Justfiles, and GitHub Actions workflows.
+#
+# Org-level reusable workflow adopting Hive practice #14 (epic #2250, issue #2260).
+
+on:
+  workflow_call:
+    inputs:
+      checks:
+        description: JSON array of checks to run
+        required: false
+        type: string
+        default: '["shellcheck", "yamllint", "json-validate", "actionlint", "justfmt"]'
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    name: Lint (${{ matrix.check }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        check: ${{ fromJSON(inputs.checks) }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Setup Homebrew
+        uses: Homebrew/actions/setup-homebrew@2ebcf16054461267868620b1414507f3ccc765c1 # main as of 2026-06-09
+
+      - name: Install tools
+        run: |
+          brew install just shellcheck shfmt yamllint jq actionlint 2>/dev/null || true
+
+      - name: Run shellcheck
+        if: matrix.check == 'shellcheck'
+        run: |
+          echo "==> Running shellcheck..."
+          find . -iname "*.sh" -type f \
+            -not -path './.build/*' \
+            -not -path './vendor/*' \
+            -not -path './_upstream-snapshots/*' \
+            -exec shellcheck --severity=error --exclude=SC1091,SC2114 --format=tty {} +
+
+      - name: Run yamllint
+        if: matrix.check == 'yamllint'
+        run: |
+          echo "==> Running yamllint..."
+          CFG_ARG=""
+          if [[ -f .yamllint.yml ]] || [[ -f .yamllint.yaml ]]; then
+            CFG_ARG="-c .yamllint.yml"
+          fi
+          find . \( -name "*.yaml" -o -name "*.yml" \) -type f \
+            -not -path './.build/*' \
+            -not -path './vendor/*' \
+            -not -path './_upstream-snapshots/*' \
+            -exec yamllint $CFG_ARG {} +
+
+      - name: Validate JSON files
+        if: matrix.check == 'json-validate'
+        run: |
+          echo "==> Validating JSON syntax..."
+          find . -name "*.json" -type f \
+            -not -path './.build/*' \
+            -not -path './vendor/*' \
+            -not -path './_upstream-snapshots/*' \
+            -exec sh -c 'jq . "$1" > /dev/null || { echo "ERROR: invalid JSON in $1"; exit 1; }' _ {} \;
+
+      - name: Run actionlint
+        if: matrix.check == 'actionlint'
+        continue-on-error: true
+        run: |
+          echo "==> Running actionlint on workflows..."
+          actionlint .github/workflows/*.yml .github/workflows/*.yaml 2>/dev/null || true
+
+      - name: Check Justfile formatting
+        if: matrix.check == 'justfmt'
+        run: |
+          if [[ -f Justfile ]]; then
+            echo "==> Checking Justfile format..."
+            just --unstable --fmt --check -f Justfile
+          fi

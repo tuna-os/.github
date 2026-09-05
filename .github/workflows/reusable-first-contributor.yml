@@ -1,0 +1,89 @@
+name: First Contributor Greetings (reusable)
+
+# Greets first-time contributors on issues and pull requests across tuna-os repos.
+#
+# Org-level reusable workflow adopting Hive practice (epic #2250, issue #2260).
+
+on:
+  workflow_call:
+    inputs:
+      pr_message:
+        description: Message to post for first-time PR contributors
+        required: false
+        type: string
+        default: |
+          👋 Welcome to the TunaOS community! 🐟
+
+          Thanks and congrats 🎉 for opening your first PR here! We're excited to have you contributing.
+
+          **Before merge, please ensure:**
+          - ✅ **DCO Sign-off** — All commits signed with `git commit -s` ([DCO](https://developercertificate.org/))
+          - ✅ **PR Description** — Explains what changed and why
+
+          A maintainer will review your PR soon. Hope you have a great time here!
+      issue_message:
+        description: Message to post for first-time issue authors
+        required: false
+        type: string
+        default: |
+          👋 Welcome to the TunaOS community! 🐟
+
+          Thanks and congrats 🎉 for opening your first issue here! Every issue helps make TunaOS better.
+
+          A maintainer will triage and respond to your issue soon.
+
+permissions:
+  contents: read
+
+jobs:
+  greeting:
+    name: Greetings
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+      pull-requests: write
+    steps:
+      - name: Greet contributor
+        uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea # v7.0.1
+        env:
+          PR_MESSAGE: ${{ inputs.pr_message }}
+          ISSUE_MESSAGE: ${{ inputs.issue_message }}
+        with:
+          script: |
+            const { owner, repo } = context.repo;
+            const author = context.payload.pull_request?.user?.login || context.payload.issue?.user?.login;
+            const isPR = !!context.payload.pull_request;
+            const itemNumber = context.payload.pull_request?.number || context.payload.issue?.number;
+
+            if (!author || !itemNumber) {
+              console.log('Could not determine author or item number');
+              return;
+            }
+
+            // Skip bots
+            if (author.endsWith('[bot]') || author === 'dependabot' || author === 'github-actions') {
+              console.log(`Skipping bot: ${author}`);
+              return;
+            }
+
+            // Check if this is the author's first issue/PR in this repo
+            const searchType = isPR ? 'pr' : 'issue';
+            const query = `repo:${owner}/${repo} author:${author} type:${searchType}`;
+            const { data: searchResult } = await github.rest.search.issuesAndPullRequests({ q: query, per_page: 2 });
+            if (searchResult.total_count > 1) {
+              console.log(`${author} already has ${searchResult.total_count} ${searchType}s — skipping greeting`);
+              return;
+            }
+
+            console.log(`First-time greeting for ${author} on ${isPR ? 'PR' : 'issue'} #${itemNumber}`);
+
+            const message = isPR ? process.env.PR_MESSAGE : process.env.ISSUE_MESSAGE;
+
+            await github.rest.issues.createComment({
+              owner,
+              repo,
+              issue_number: itemNumber,
+              body: message
+            });
+
+            console.log('Greeting posted successfully');
