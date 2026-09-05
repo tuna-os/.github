@@ -1,19 +1,18 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  "extends": ["config:recommended"],
-  "automerge": false,
-  "platformAutomerge": false,
+  "extends": [
+    "local>tuna-os/.github"
+  ],
   "rebaseWhen": "conflicted",
   "packageRules": [
     {
-      "description": "Keep routine project inputs current once CI passes. Only patch/pin/pinDigest/digest — NOT major or minor, which need human review before merge (org policy: tuna-os/.github#12). Copying 'major'/'minor' into this list is exactly the mistake that bypassed the org gate in 11 repos (tunaOS#1612) after they onboarded from an earlier, unsafe version of this template.",
-      "matchUpdateTypes": ["patch", "pin", "pinDigest", "digest"],
-      "automerge": true
-    },
-    {
       "description": "Reduce CI churn from rapidly moving base-image digests",
-      "matchDatasources": ["docker"],
-      "matchPackageNames": ["<high-churn-image>"],
+      "matchDatasources": [
+        "docker"
+      ],
+      "matchPackageNames": [
+        "<high-churn-image>"
+      ],
       "minimumReleaseAge": "3 days"
     }
   ]
