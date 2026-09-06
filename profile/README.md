@@ -5,75 +5,7 @@
   <img src="https://fonts.gstatic.com/s/e/notoemoji/latest/1f41f/512.gif" alt="🐟" width="100" height="100">
 </picture>
 
-# Tuna OS
 
-### *Cloud-Native Enterprise Linux Desktop*
-
-*Bootc-based immutable OS images built on AlmaLinux, CentOS Stream, and Fedora*
-
-[![tunaOS](https://img.shields.io/github/stars/tuna-os/tunaOS?style=flat-square&label=⭐%20tunaOS&color=3b82f6)](https://github.com/tuna-os/tunaOS)
-[![License](https://img.shields.io/github/license/tuna-os/tunaOS?style=flat-square&color=22c55e)](https://github.com/tuna-os/tunaOS/blob/main/LICENSE)
-[![Website](https://img.shields.io/badge/tunaos.org-website-6366f1?style=flat-square)](https://tunaos.org)
-
-</div>
-
----
-
-Tuna OS brings a **modern cloud-native desktop** to Enterprise Linux and
-community distributions. Images combine an immutable
-[bootc](https://containers.github.io/bootc/) base with the desktop and hardware
-options supported by each distribution.
-
-Inspired by [Bluefin](https://projectbluefin.io) and the [Universal Blue](https://universal-blue.org/) community.
-
-## Featured Enterprise Linux images
-
-| Image | Base | Description |
-|---|---|---|
-| [**yellowfin**](https://github.com/tuna-os/tunaOS) | AlmaLinux Kitten 10 | Closest to upstream CentOS Stream |
-| [**albacore**](https://github.com/tuna-os/tunaOS) | AlmaLinux 10 | Stable Enterprise Linux base |
-| [**skipjack**](https://github.com/tuna-os/tunaOS) | CentOS Stream 10 | Beta — upstream testing builds |
-
-These are the project's core Enterprise Linux images. See the canonical
-[image matrix](https://github.com/tuna-os/tunaOS#choose-your-image) for every
-available image family, base distribution, desktop, architecture, and registry
-path.
-
-### Desktop and hardware options
-
-Desktop and hardware options vary by image. Common tags combine a desktop such
-as `gnome`, `kde`, `cosmic`, or `niri` with an optional hardware suffix such as
-`-hwe` or `-nvidia`. Check the image matrix before selecting a tag.
-
-```
-ghcr.io/tuna-os/yellowfin:gnome
-ghcr.io/tuna-os/albacore:kde-nvidia
-ghcr.io/tuna-os/skipjack:gnome-hwe
-```
-
-## Key Repositories
-
-| Repo | Purpose |
-|---|---|
-| [tunaOS](https://github.com/tuna-os/tunaOS) | Main image builder |
-| [docs](https://github.com/tuna-os/docs) | Documentation site |
-| [tunaos-packages](https://github.com/tuna-os/tunaos-packages) | Cross-distro package factory — RPM + DEB repositories (formerly debian-copr) |
-
-## Archived
-
-The following repositories are **read-only / archived** — they no longer publish
-builds or releases. Their documentation pages on
-[tunaos.org](https://tunaos.org) are kept for historical reference only:
-
-| Repo | Purpose |
-|---|---|
-| [chunkah](https://github.com/tuna-os/chunkah) | OCI layer optimization tool (archived) |
-| [bonito-x13s](https://github.com/tuna-os/bonito-x13s) | ThinkPad X13s ARM64 image (archived) — see the [Bonito FAQ](https://tunaos.org/docs/faq) |
-
----
-
-<div align="center">
-
-Built with ❤️ on Enterprise Linux · [tunaos.org](https://tunaos.org) · [Docs](https://github.com/tuna-os/docs)
-
-</div>
+# TunaOS **Cloud-native Enterprise Linux desktops, the tools that build them, and the applications that ship on them.** [tunaos.org](https://tunaos.org) Â· [Documentation](https://tunaos.org/docs/intro) Â· [Download](https://tunaos.org/download) Â· [Build matrix](https://tunaos.org/matrix)
+--- TunaOS builds desktop operating systems as [bootc](https://containers.github.io/bootc/) OCI images: pull one, boot it, or rebase onto it, with atomic updates and a rollback to the previous image. The images run GNOME, KDE Plasma, COSMIC, Niri, XFCE or Pantheon on AlmaLinux, CentOS Stream, Fedora and several community bases. Around the images sits the rest of the work: a build and boot-test pipeline, a Flatpak remote of GTK4 applications that install on any distribution, package repositories for what Enterprise Linux does not carry yet, and an installer that puts Linux on a Windows machine without repartitioning it. Inspired by [Bluefin](https://projectbluefin.io) and the [Universal Blue](https://universal-blue.org/) community. ## Start here | If you | Start with | |---|---| | Run Windows and want to try Linux | [**wootc**](https://github.com/tuna-os/wootc) â€” installs Linux into a file beside your Windows files, adds a boot entry, and uninstalls by deleting a folder | | Want an ISO to install | [**Download**](https://tunaos.org/download) â€” live ISOs for every published image | | Already run bootc | `sudo bootc switch ghcr.io/tuna-os/albacore:gnome` | | Want the applications, on any distribution | [**Flatpaks**](https://tunaos.org/flatpak) â€” the office suite, terminals, a file manager, a Homebrew front end | | Want to build your own media | [**ISO builder**](https://tunaos.org/iso-builder) â€” builds a live ISO in the browser | ## The images Four images cover most people. Each is one base distribution with a choice of desktop. | Image | Base | For | |---|---|---| | [**Albacore**](https://tunaos.org/albacore) | AlmaLinux 10 | A 10-year support cycle. The daily driver | | [**Yellowfin**](https://tunaos.org/yellowfin) | AlmaLinux Kitten 10 | Newer packages on a near-enterprise base | | [**Skipjack**](https://tunaos.org/skipjack) | CentOS Stream 10 | A preview of where Enterprise Linux is going | | [**Bonito**](https://tunaos.org/bonito) | Fedora 44 | The latest packages and kernel | Other bases â€” Ubuntu, Arch, Debian, openSUSE, Gentoo, RHEL and the rolling-release siblings â€” are published too: see [all variants](https://tunaos.org/variants) and the [build matrix](https://tunaos.org/matrix), which shows what is built and what has a live ISO. Tags combine a desktop with an optional hardware suffix: ``` ghcr.io/tuna-os/yellowfin:gnome ghcr.io/tuna-os/albacore:kde-nvidia ghcr.io/tuna-os/skipjack:gnome-hwe ``` ## Applications Built in this org and published on the TunaOS Flatpak remote, so they install on any distribution that runs Flatpak. | Project | What it is | |---|---| | [gtk-office-suite](https://github.com/tuna-os/gtk-office-suite) | Letters, Tables and Decks: a word processor, spreadsheet and presentation app in Rust and GTK 4. DOCX, ODT, XLSX, ODS and PPTX in, PDF out | | [blueshell](https://github.com/tuna-os/blueshell) | A container-native terminal for GNOME on the Ghostty engine | | [mariner](https://github.com/tuna-os/mariner) | A GNOME Files alternative â€” typeahead, dual-pane, Quick Look, full-text search | | [Tavern](https://github.com/tuna-os/Tavern) | A GTK 4 front end for Homebrew on Linux | | [mandelbrot](https://github.com/tuna-os/mandelbrot) | A GNOME-native Matrix client with calling, sliding sync and QR login | | [bluefin-cli](https://github.com/tuna-os/bluefin-cli) | Shell and development-environment setup from the terminal | ## Build and delivery | Project | What it does | |---|---| | [tunaOS](https://github.com/tuna-os/tunaOS) | The image factory. Every published desktop image is built here | | [tacklebox](https://github.com/tuna-os/tacklebox) | Turns bootc images into multi-desktop, deduplicated live ISOs and disk images | | [iso-builder](https://github.com/tuna-os/iso-builder) | Tacklebox compiled to WebAssembly, so a browser can author an ISO with no build host | | [corral](https://github.com/tuna-os/corral) | Boots every published image in a real VM and checks it reaches a desktop before promotion | | [tunaos-packages](https://github.com/tuna-os/tunaos-packages) | The package factory: RPM and DEB repositories for what the bases do not ship | | [bootc-migrate](https://github.com/tuna-os/bootc-migrate) | In-place migration from OSTree-backed bootc systems to ComposeFS | | [remora](https://github.com/tuna-os/remora) | Local package layering that survives image updates | | [wootc](https://github.com/tuna-os/wootc) | Installs a bootc Linux desktop from inside Windows, reversibly | ## Desktops built from source [TromsÃ¸](https://github.com/tuna-os/tromso) (KDE) and [XFCE Linux](https://github.com/tuna-os/xfce-linux) are built from source with [BuildStream](https://buildstream.build) on freedesktop-sdk, rather than assembled from prebuilt packages â€” the same approach as GNOME OS and Project Bluefin's Dakota. ## Archived [chunkah](https://github.com/tuna-os/chunkah) (OCI layer optimization) and [bonito-x13s](https://github.com/tuna-os/bonito-x13s) (ThinkPad X13s ARM64) are read-only and no longer publish builds. Their pages on tunaos.org stay up for reference; the X13s story is in the [FAQ](https://tunaos.org/docs/faq). ## Documentation Every repository's README and docs are synced daily into [tunaos.org](https://tunaos.org/docs/intro), so the site and the source stay in step. [docs](https://github.com/tuna-os/docs) is the site itself. ## Contributing Every repository takes issues and pull requests, and much of the work lands upstream in freedesktop-sdk, GNOME OS, KDE and BuildStream. Start at the [documentation](https://tunaos.org/docs/intro), or at [support](https://tunaos.org/support) if you would rather back the projects TunaOS is built on. ---
+[tunaos.org](https://tunaos.org) Â· [Docs](https://github.com/tuna-os/docs) Â· Built on Enterprise Linux
