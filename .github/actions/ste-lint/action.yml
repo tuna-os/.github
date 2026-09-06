@@ -1,0 +1,72 @@
+name: "Simplified Technical English lint"
+description: >-
+  Checks Markdown prose against ASD-STE100 (sentence length, active voice,
+  -ing forms, approved words, noun clusters, paragraph length) with a
+  per-repo budget so conformance can be converted file by file instead of
+  demanded on day one. Originally built in tuna-os/docs; the linter and its
+  rules travel with this action so no repository carries a copy to drift.
+
+inputs:
+  budget-file:
+    description: >-
+      File holding the maximum number of findings this repo tolerates. The
+      number only ever goes down; lower it whenever a batch of prose lands.
+    required: false
+    default: .ste-budget
+  budget:
+    description: >-
+      Budget to use when budget-file does not exist. Seeding a repo means
+      running the linter once and committing its current count -- a gate
+      that fails on day one gets disabled on day two.
+    required: false
+    default: ""
+  node-version:
+    required: false
+    default: "24"
+  run-tests:
+    description: >-
+      Run the linter's own rule tests first. About half of them assert what
+      must NOT be reported, because a checker that flags correct prose gets
+      switched off, and then nothing is checked at all.
+    required: false
+    default: "true"
+
+runs:
+  using: composite
+  steps:
+    - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+      with:
+        node-version: ${{ inputs.node-version }}
+
+    - name: Rule tests
+      if: inputs.run-tests == 'true'
+      shell: bash
+      # Run from the workspace, not the action directory: the suite's
+      # generated-tree tests resolve scripts/sync-org-docs.mjs relative to the
+      # repository being checked, and announce themselves as skipped when it
+      # is not there.
+      run: node "$GITHUB_ACTION_PATH/ste-lint.test.mjs"
+
+    - name: STE budget
+      shell: bash
+      env:
+        BUDGET_FILE: ${{ inputs.budget-file }}
+        BUDGET_INPUT: ${{ inputs.budget }}
+      run: |
+        set -euo pipefail
+        if [ -f "$BUDGET_FILE" ]; then
+          budget=$(cat "$BUDGET_FILE")
+        elif [ -n "$BUDGET_INPUT" ]; then
+          budget="$BUDGET_INPUT"
+        else
+          echo "::error::No $BUDGET_FILE and no 'budget' input. Seed this repo first:"
+          echo "::error::  node <action>/ste-lint.mjs --summary   # count, then commit it as $BUDGET_FILE"
+          exit 1
+        fi
+        echo "STE budget: ${budget}"
+        # --summary prints the per-file counts, the opt-outs with their stated
+        # reasons, and which trees were treated as generated. Printing it on
+        # every run is what makes a tree entering or leaving the budget visible
+        # in the log rather than only in the total.
+        node "$GITHUB_ACTION_PATH/ste-lint.mjs" --summary
+        node "$GITHUB_ACTION_PATH/ste-lint.mjs" --max "$budget" >/dev/null
