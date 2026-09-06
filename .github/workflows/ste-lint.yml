@@ -1,0 +1,64 @@
+name: Simplified Technical English (reusable)
+
+# Canonical STE prose check for tuna-os repositories. Callers keep their own
+# `on:` trigger block and become a thin job that `uses:` this.
+#
+# Built in tuna-os/docs and moved here so every repo gets the same rules. That
+# matters more than it sounds: docs/<slug>/ in the aggregator is generated from
+# ~40 repos' READMEs, so prose written in those repos was reaching the site
+# unchecked -- the aggregator deliberately skips generated trees, because a fix
+# there is reverted by the next sync and the real author is another repository.
+# Checking at the source is the half that was missing.
+#
+# The linter and its rules live in .github/actions/ste-lint and travel with the
+# action, so no repository carries a copy that can drift.
+
+on:
+  workflow_call:
+    inputs:
+      budget-file:
+        description: File holding this repo's maximum tolerated findings.
+        required: false
+        type: string
+        default: .ste-budget
+      budget:
+        description: >-
+          Budget to use when budget-file does not exist. Seed a repo by running
+          the linter once and committing its current count.
+        required: false
+        type: string
+        default: ""
+      node-version:
+        required: false
+        type: string
+        default: "24"
+      run-tests:
+        required: false
+        type: boolean
+        default: true
+      runs-on:
+        required: false
+        type: string
+        default: ubuntu-latest
+      checkout-ref:
+        description: Ref to check out. Empty means the ref that triggered the caller.
+        required: false
+        type: string
+        default: ""
+
+jobs:
+  ste:
+    name: Simplified Technical English
+    runs-on: ${{ inputs.runs-on }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: ${{ inputs.checkout-ref }}
+          persist-credentials: false
+
+      - uses: tuna-os/.github/.github/actions/ste-lint@main
+        with:
+          budget-file: ${{ inputs.budget-file }}
+          budget: ${{ inputs.budget }}
+          node-version: ${{ inputs.node-version }}
+          run-tests: ${{ inputs.run-tests }}
