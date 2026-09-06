@@ -8,6 +8,12 @@ name: Publish Flatpak (reusable)
 #
 # Not used by Tavern: it has a prod/main branch split and a promotion flow
 # this workflow doesn't model. See tuna-os/tunaos#1183 for that follow-up.
+#
+# `source-repo` lets a caller publish an app whose source lives in someone
+# else's repository (stock upstream Ghostty, republished from
+# tuna-os/blueshell). The caller owns the trigger policy and the registry
+# path; the upstream repo is checked out untouched and built with its own
+# manifest, so upstream dependency and runtime bumps need no action here.
 
 on:
   workflow_call:
@@ -38,6 +44,24 @@ on:
         required: false
         type: boolean
         default: false
+      source-repo:
+        description: >
+          owner/repo to build the app from, when the source is not the calling
+          repository -- i.e. republishing a third-party app onto the TunaOS
+          remote. Empty (the default) checks out the caller at the calling ref,
+          which is what every first-party app wants and what all existing
+          callers get. The app still lands on the registry and in the central
+          index under `repo-name`, so give it a path of its own.
+        required: false
+        type: string
+        default: ''
+      source-ref:
+        description: >
+          Branch, tag or SHA within source-repo. Empty means that repo's
+          default branch. Ignored when source-repo is empty.
+        required: false
+        type: string
+        default: ''
       attach-bundles:
         description: Build a .flatpak bundle per arch and attach to the GitHub release on tag push
         required: false
@@ -83,6 +107,11 @@ jobs:
     steps:
       - uses: actions/checkout@v7
         with:
+          # Empty `repository`/`ref` is not the same as omitting them for
+          # actions/checkout -- an empty string takes the same "not provided"
+          # path, so the default stays "this repo at the triggering ref".
+          repository: ${{ inputs.source-repo || github.repository }}
+          ref: ${{ inputs.source-ref }}
           submodules: ${{ inputs.checkout-submodules }}
 
       - name: Generate offline cargo sources
