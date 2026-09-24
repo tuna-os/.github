@@ -38,6 +38,12 @@ inputs:
     description: Max push attempts before failing the step
     required: false
     default: "8"
+  require-appstream:
+    description: >-
+      Fail instead of warning when the image carries no AppStream metadata
+      (org.freedesktop.appstream.* labels)
+    required: false
+    default: "false"
 
 runs:
   using: composite
@@ -54,6 +60,7 @@ runs:
         DOCS_REPO: ${{ inputs.docs-repo }}
         FLATPAK_INDEX_TOKEN: ${{ inputs.token }}
         MAX_ATTEMPTS: ${{ inputs.max-attempts }}
+        REQUIRE_APPSTREAM: ${{ inputs.require-appstream }}
       run: |
         set -euo pipefail
 
@@ -61,6 +68,11 @@ runs:
         if [ "${#tag_args[@]}" -eq 0 ]; then
           echo "::error::tags input is empty" >&2
           exit 1
+        fi
+
+        require_appstream_args=()
+        if [ "$REQUIRE_APPSTREAM" = "true" ]; then
+          require_appstream_args=(--require-appstream)
         fi
 
         WORKDIR="$(mktemp -d)"
@@ -86,7 +98,8 @@ runs:
             --index-file "$INDEX_REPO/$INDEX_FILE" \
             --repo-name "$REPO_NAME" \
             --registry "$REGISTRY" \
-            --tags "${tag_args[@]}"
+            --tags "${tag_args[@]}" \
+            "${require_appstream_args[@]}"
 
           pushd "$INDEX_REPO" >/dev/null
           git add "$INDEX_FILE"
