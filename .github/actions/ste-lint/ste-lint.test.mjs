@@ -453,6 +453,31 @@ test('--format json keeps stdout parseable', () => {
   assert.ok(parsed[0].rule && parsed[0].message, JSON.stringify(parsed[0]));
 });
 
+test('a URL inside backticks does not unbalance later code spans', () => {
+  // Regression: the URL strip used to eat the closing backtick of
+  // `https://...`, so every backtick below paired with the wrong partner,
+  // newlines vanished inside phantom code spans, and the whole rest of the
+  // file became one finding. A doc dense with backticked URLs and commands
+  // must keep its line numbers and its separate blocks.
+  const md = [
+    'Add that host as an `oci+https://` remote.',
+    '',
+    'Flatpak reads the index.',
+    '',
+    '1. Build with `flatpak-builder`. Tag the image.',
+    '2. Push to `ghcr.io/<owner>/<app>` with skopeo.',
+    '',
+    'Health-check with `remote-ls`. Never use `remote-info`.',
+  ].join('\n');
+  const stripped = stripNonProse(md);
+  assert.equal(stripped.split('\n').length, md.split('\n').length,
+    'no newline may vanish inside a code span');
+  const found = lintText(md);
+  assert.ok(found.every((f) => f.line >= 1 && f.line <= 8), JSON.stringify(found));
+  const blocksFound = blocks(stripped);
+  assert.ok(blocksFound.length >= 4, JSON.stringify(blocksFound.map((b) => b.line)));
+});
+
 test('--changed-only reports only what the branch added', () => {
   const root = mkdtempSync(join(tmpdir(), 'ste-lint-delta-'));
   const git = ( ...a) => execFileSync('git', a, {cwd: root, encoding: 'utf8'});
