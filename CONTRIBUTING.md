@@ -22,6 +22,11 @@ of base OS × desktop × kernel × drivers, plus installer and migration tooling
    why before writing code. Small fixes (typos, docs) can skip this.
 2. **Fork the repo** (or ask a maintainer for push access) and create a
    branch. We use the `arch/`, `fix/`, `feat/`, `chore/` prefix convention.
+   **Note:** Some repositories use non-standard default branches (not `main`).
+   Verify the target repo's default branch before creating your branch:
+   `gh api repos/tuna-os/<repo> --jq .default_branch`. Current non-standard
+   branches: `bootc-installer` and `fisherman` (dev), `changelog-action` and
+   `mariner` (master), `blueshell` (ptyxis-port), `hive` (v4).
 3. **Check the repo's `AGENTS.md` / `justfile`** — most repos standardize
    build/test/lint behind `just` recipes (`just build`, `just test`, `just fix`).
 4. **Sign your commits** — every commit must be DCO-signed-off
