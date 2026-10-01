@@ -10,7 +10,23 @@ Enable the CI template only after replacing the checkout action version with the
 
 The organisation baseline automerges **only** `patch`/`pin`/`pinDigest`/`digest` Renovate updates, after branch protection passes — `major` and `minor` updates always need human review before merge (tuna-os/.github#12). Do not widen `renovate.json`'s automerge `matchUpdateTypes` to include `major`/`minor`, and do not set top-level `automerge`/`platformAutomerge` to `true` — that reintroduces exactly the org-gate bypass tracked in tuna-os/tunaOS#1612. The tuned OS configuration adds custom managers for image digests and pinned workflow SHAs. Copy those custom managers only when those file formats exist. For an upstream that moves several times a day, use `minimumReleaseAge` to coalesce updates.
 
-Validate any hand-edited `renovate.json` with `npx -p renovate renovate-config-validator` before committing — a syntactically invalid config (e.g. a stray `"ignore": true` key, which isn't valid Renovate schema) silently halts *all* Renovate PRs for the repo, not just the one broken rule. That only catches schema errors, not policy violations: a config can be perfectly valid JSON and still automerge major/minor (that's exactly how tunaOS#1612 happened). `ci.yml`'s `renovate-policy` job runs `scripts/check-renovate-automerge-policy.py` against `renovate.json` on every push and PR, resolving the same rule-layering Renovate itself does (top-level `automerge`, overridden in order by each `packageRule`) and failing the build if any path leaves `major`/`minor` automerging — keep that job in `required-checks`' `needs` list.
+### Validating your Renovate policy
+
+Schema validation alone is not sufficient. Before committing `renovate.json`, run both:
+
+1. **Schema validation** — catches JSON and Renovate schema errors:
+   ```bash
+   npx -p renovate renovate-config-validator
+   ```
+   
+2. **Policy validation** — ensures your config doesn't accidentally automerge `major`/`minor` despite layered rules:
+   ```bash
+   python3 scripts/check-renovate-automerge-policy.py renovate.json
+   ```
+
+Rule layering can defeat schema validation. For example, a config with `automerge: false` at the top level could still automerge `major` updates if a `packageRule` applies a rule that reintroduces `automerge: true` for a specific package set — exactly what happened in tuna-os/tunaOS#1612. The policy check resolves rules in the order Renovate applies them and fails if any path leaves major/minor automerging.
+
+CI will catch policy violations in the `renovate-policy` job, but validating locally prevents push-and-fix cycles. See `ci.yml`'s `renovate-policy` job for how the same check gates your build.
 
 ## Flatpak remote
 
