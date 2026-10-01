@@ -16,7 +16,7 @@ concurrency:
 
 jobs:
   validate:
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     steps:
       - uses: actions/checkout@v7
       - name: Run the local-equivalent checks
@@ -29,7 +29,7 @@ jobs:
   # (see tuna-os/tunaOS#1612, tuna-os/tunaOS#1636) — this actually resolves
   # the rule layering instead of just checking JSON schema.
   renovate-policy:
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     steps:
       - uses: actions/checkout@v7
       - name: Check Renovate automerge policy
@@ -40,7 +40,7 @@ jobs:
   required-checks:
     if: always()
     needs: [validate, renovate-policy]
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     steps:
       - name: Fail if a required job did not succeed
         env:
