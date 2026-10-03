@@ -101,6 +101,8 @@ def run_fixture(name: str, expected_returncode: int, expected_text: str) -> None
             expected_status = "PASSED" if expected_returncode == 0 else "FAILED"
             if expected_status not in summary_text:
                 raise AssertionError(f"{name}: summary did not report {expected_status}\n{summary_text}")
+            if expected_returncode == 0 and "/releases/download/v1.2.3/example.tar.gz" not in summary_text:
+                raise AssertionError(f"{name}: summary did not link the verified artifact\n{summary_text}")
     finally:
         server.shutdown()
         thread.join()

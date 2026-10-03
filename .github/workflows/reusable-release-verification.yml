@@ -108,8 +108,13 @@ jobs:
                   f"- Release: [`{RELEASE_TAG}`]({repo_url}/releases/tag/{urllib.parse.quote(RELEASE_TAG, safe='')})",
               ]
               if rows:
+                  release_asset_url = f"{repo_url}/releases/download/{urllib.parse.quote(RELEASE_TAG, safe='')}"
+
+                  def asset_link(name):
+                      return f"[`{name}`]({release_asset_url}/{urllib.parse.quote(name, safe='')})"
+
                   lines.extend(["", "| Artifact | Checksum | Signature | Provenance | SBOM |", "| --- | --- | --- | --- | --- |"])
-                  lines.extend(f"| `{name}` | `{checksum}` | `{signature}` | `{provenance}` | `{sbom}` |" for name, checksum, signature, provenance, sbom in rows)
+                  lines.extend(f"| {asset_link(name)} | {asset_link(checksum)} | {asset_link(signature)} | {asset_link(provenance)} | {asset_link(sbom)} |" for name, checksum, signature, provenance, sbom in rows)
               Path(SUMMARY).write_text("\n".join(lines) + "\n", encoding="utf-8")
 
           def fail(message):
