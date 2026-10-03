@@ -28,9 +28,9 @@ A curated, copyable baseline for TunaOS projects. It distils the practices that 
 
 Before enabling `release.yml`:
 
-1. Replace `<owner>/<repository>` and replace the reusable workflow's
-   `<full-commit-sha>` with the complete 40-character commit SHA from
-   `tuna-os/.github`. Never use `main` or a tag for this cross-repository gate.
+1. Replace `<owner>/<repository>`. Keep the reusable workflow pinned to a
+   reviewed, complete 40-character commit SHA from `tuna-os/.github`; never
+   replace it with `main`, a tag, or a shortened SHA.
 2. Make the release tool append `RELEASE_TAG=<published-tag>` to `GITHUB_ENV`.
 3. Replace the example entries in `.github/release-artifacts.json`. Each
    published payload declares five distinct release asset names: the payload,

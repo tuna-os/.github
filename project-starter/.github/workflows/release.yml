@@ -65,9 +65,8 @@ jobs:
     needs: release
     permissions:
       contents: read
-    # Replace this placeholder with the full commit SHA from tuna-os/.github.
-    # A branch, tag, or shortened SHA is not an acceptable release-gate pin.
-    uses: tuna-os/.github/.github/workflows/reusable-release-verification.yml@<full-commit-sha>
+    # Keep this cross-repository workflow pinned to a full commit SHA.
+    uses: tuna-os/.github/.github/workflows/reusable-release-verification.yml@17f902db296fa894f942b96659032327b007068d # feat/reusable-release-verification
     with:
       release-tag: ${{ needs.release.outputs.release-tag }}
       expected-commit: ${{ needs.release.outputs.expected-commit }}
