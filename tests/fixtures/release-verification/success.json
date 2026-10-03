@@ -1,0 +1,31 @@
+{
+  "routes": {
+    "/repos/tuna-os/example/git/ref/tags/v1.2.3": {
+      "status": 200,
+      "json": {"object": {"type": "tag", "sha": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"}}
+    },
+    "/repos/tuna-os/example/git/tags/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa": {
+      "status": 200,
+      "json": {"object": {"type": "commit", "sha": "1111111111111111111111111111111111111111"}}
+    },
+    "/repos/tuna-os/example/releases/tags/v1.2.3": {
+      "status": 200,
+      "json": {
+        "tag_name": "v1.2.3",
+        "draft": false,
+        "assets": [
+          {"name": "example.tar.gz", "size": 16, "url": "{base}/assets/payload"},
+          {"name": "example.tar.gz.sha256", "size": 81, "url": "{base}/assets/checksum"},
+          {"name": "example.tar.gz.sig", "size": 9, "url": "{base}/assets/signature"},
+          {"name": "example.tar.gz.intoto.jsonl", "size": 3, "url": "{base}/assets/provenance"},
+          {"name": "example.tar.gz.spdx.json", "size": 3, "url": "{base}/assets/sbom"}
+        ]
+      }
+    },
+    "/assets/payload": {"status": 200, "text": "release payload\n"},
+    "/assets/checksum": {"status": 200, "text": "be110d6f8d61b5ddbd77bac7005548b01a51a7267183875866b264659d9d0753  example.tar.gz\n"},
+    "/assets/signature": {"status": 200, "text": "signature"},
+    "/assets/provenance": {"status": 200, "text": "{}\n"},
+    "/assets/sbom": {"status": 200, "text": "{}\n"}
+  }
+}

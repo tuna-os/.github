@@ -1,0 +1,21 @@
+{
+  "routes": {
+    "/repos/tuna-os/example/git/ref/tags/v1.2.3": {
+      "status": 200,
+      "json": {"object": {"type": "commit", "sha": "1111111111111111111111111111111111111111"}}
+    },
+    "/repos/tuna-os/example/releases/tags/v1.2.3": {
+      "status": 200,
+      "json": {
+        "tag_name": "v1.2.3",
+        "draft": false,
+        "assets": [
+          {"name": "example.tar.gz", "size": 16, "url": "{base}/assets/payload"},
+          {"name": "example.tar.gz.sha256", "size": 81, "url": "{base}/assets/checksum"},
+          {"name": "example.tar.gz.sig", "size": 9, "url": "{base}/assets/signature"},
+          {"name": "example.tar.gz.intoto.jsonl", "size": 3, "url": "{base}/assets/provenance"}
+        ]
+      }
+    }
+  }
+}

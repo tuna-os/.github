@@ -1,0 +1,8 @@
+{
+  "routes": {
+    "/repos/tuna-os/example/git/ref/tags/v1.2.3": {
+      "status": 503,
+      "json": {"message": "fixture service unavailable"}
+    }
+  }
+}

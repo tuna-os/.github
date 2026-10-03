@@ -1,0 +1,201 @@
+name: Release Verification (reusable)
+
+on:
+  workflow_call:
+    inputs:
+      release-tag:
+        description: Exact GitHub release tag to verify
+        required: true
+        type: string
+      expected-commit:
+        description: Full commit SHA that the release tag must resolve to
+        required: true
+        type: string
+      expected-artifacts:
+        description: >-
+          JSON array of objects with name, checksum, signature, provenance,
+          and sbom asset names
+        required: true
+        type: string
+      repository:
+        description: Repository containing the release (owner/name)
+        required: false
+        type: string
+        default: ""
+
+permissions:
+  contents: read
+
+jobs:
+  verify-release:
+    name: Verify published release
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Verify tag and release assets
+        env:
+          API_URL: https://api.github.com
+          EXPECTED_ARTIFACTS: ${{ inputs.expected-artifacts }}
+          EXPECTED_COMMIT: ${{ inputs.expected-commit }}
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_REPOSITORY: ${{ inputs.repository || github.repository }}
+          RELEASE_TAG: ${{ inputs.release-tag }}
+        run: |
+          python3 - <<'PYEOF'
+          import hashlib
+          import json
+          import os
+          import re
+          import sys
+          import urllib.error
+          import urllib.parse
+          import urllib.request
+          from pathlib import Path
+
+          API_URL = os.environ.get("API_URL", "https://api.github.com").rstrip("/")
+          REPOSITORY = os.environ["RELEASE_REPOSITORY"]
+          RELEASE_TAG = os.environ["RELEASE_TAG"]
+          EXPECTED_COMMIT = os.environ["EXPECTED_COMMIT"].lower()
+          TOKEN = os.environ.get("GH_TOKEN", "")
+          SUMMARY = os.environ.get("GITHUB_STEP_SUMMARY")
+          SHA256_RE = re.compile(r"^([0-9a-fA-F]{64})\s+[* ]?(.+?)\s*$")
+
+          class SafeRedirectHandler(urllib.request.HTTPRedirectHandler):
+              """Do not forward the GitHub token to an asset storage host."""
+
+              def redirect_request(self, req, fp, code, msg, headers, newurl):
+                  redirected = super().redirect_request(req, fp, code, msg, headers, newurl)
+                  if redirected and urllib.parse.urlsplit(newurl).netloc != urllib.parse.urlsplit(req.full_url).netloc:
+                      redirected.remove_header("Authorization")
+                  return redirected
+
+          opener = urllib.request.build_opener(SafeRedirectHandler())
+
+          def request(path, *, accept="application/vnd.github+json"):
+              url = path if path.startswith(("http://", "https://")) else f"{API_URL}{path}"
+              headers = {
+                  "Accept": accept,
+                  "User-Agent": "tuna-os-release-verifier/1",
+                  "X-GitHub-Api-Version": "2022-11-28",
+              }
+              if TOKEN:
+                  headers["Authorization"] = f"Bearer {TOKEN}"
+              try:
+                  with opener.open(urllib.request.Request(url, headers=headers), timeout=30) as response:
+                      return response.read()
+              except urllib.error.HTTPError as error:
+                  detail = error.read(512).decode("utf-8", errors="replace")
+                  raise RuntimeError(f"GitHub API returned HTTP {error.code} for {url}: {detail}") from error
+              except urllib.error.URLError as error:
+                  raise RuntimeError(f"GitHub API request failed for {url}: {error.reason}") from error
+
+          def api_json(path):
+              try:
+                  return json.loads(request(path))
+              except json.JSONDecodeError as error:
+                  raise RuntimeError(f"GitHub API returned invalid JSON for {path}") from error
+
+          def write_summary(status, detail, rows=()):
+              if not SUMMARY:
+                  return
+              repo_url = f"https://github.com/{REPOSITORY}"
+              lines = [
+                  "## Release verification",
+                  "",
+                  f"**{status}:** {detail}",
+                  "",
+                  f"- Source commit: [`{EXPECTED_COMMIT}`]({repo_url}/commit/{EXPECTED_COMMIT})",
+                  f"- Release: [`{RELEASE_TAG}`]({repo_url}/releases/tag/{urllib.parse.quote(RELEASE_TAG, safe='')})",
+              ]
+              if rows:
+                  lines.extend(["", "| Artifact | Checksum | Signature | Provenance | SBOM |", "| --- | --- | --- | --- | --- |"])
+                  lines.extend(f"| `{name}` | `{checksum}` | `{signature}` | `{provenance}` | `{sbom}` |" for name, checksum, signature, provenance, sbom in rows)
+              Path(SUMMARY).write_text("\n".join(lines) + "\n", encoding="utf-8")
+
+          def fail(message):
+              write_summary("FAILED", message)
+              raise RuntimeError(message)
+
+          try:
+              if not re.fullmatch(r"[0-9a-f]{40}", EXPECTED_COMMIT):
+                  fail("expected-commit must be a full 40-character commit SHA")
+              if not re.fullmatch(r"[^/\s]+/[^/\s]+", REPOSITORY):
+                  fail("repository must have the form owner/name")
+
+              try:
+                  contract = json.loads(os.environ["EXPECTED_ARTIFACTS"])
+              except json.JSONDecodeError as error:
+                  fail(f"expected-artifacts is not valid JSON: {error}")
+              if not isinstance(contract, list) or not contract:
+                  fail("expected-artifacts must be a non-empty JSON array")
+
+              required_fields = ("name", "checksum", "signature", "provenance", "sbom")
+              declared_names = []
+              for index, artifact in enumerate(contract):
+                  if not isinstance(artifact, dict):
+                      fail(f"expected-artifacts[{index}] must be an object")
+                  missing = [field for field in required_fields if not isinstance(artifact.get(field), str) or not artifact[field].strip()]
+                  if missing:
+                      fail(f"expected-artifacts[{index}] has missing or empty fields: {', '.join(missing)}")
+                  declared_names.extend(artifact[field] for field in required_fields)
+              duplicates = sorted({name for name in declared_names if declared_names.count(name) > 1})
+              if duplicates:
+                  fail(f"asset names must be unique across the contract: {', '.join(duplicates)}")
+
+              repo_path = "/repos/" + urllib.parse.quote(REPOSITORY, safe="/")
+              tag_path = urllib.parse.quote(RELEASE_TAG, safe="")
+              target = api_json(f"{repo_path}/git/ref/tags/{tag_path}").get("object", {})
+              seen_tags = set()
+              while target.get("type") == "tag":
+                  tag_sha = target.get("sha")
+                  if not re.fullmatch(r"[0-9a-fA-F]{40}", str(tag_sha)) or tag_sha in seen_tags:
+                      fail("tag object chain is invalid or cyclic")
+                  seen_tags.add(tag_sha)
+                  target = api_json(f"{repo_path}/git/tags/{tag_sha}").get("object", {})
+              if target.get("type") != "commit" or str(target.get("sha", "")).lower() != EXPECTED_COMMIT:
+                  fail(f"tag {RELEASE_TAG} does not resolve to expected commit {EXPECTED_COMMIT}")
+
+              release = api_json(f"{repo_path}/releases/tags/{tag_path}")
+              if release.get("tag_name") != RELEASE_TAG or release.get("draft") is True:
+                  fail(f"release {RELEASE_TAG} is missing, draft, or names a different tag")
+
+              assets = {}
+              for asset in release.get("assets", []):
+                  name = asset.get("name")
+                  if name in assets:
+                      fail(f"release contains duplicate asset name: {name}")
+                  assets[name] = asset
+              absent = sorted(set(declared_names) - set(assets))
+              if absent:
+                  fail("release is missing required assets: " + ", ".join(absent))
+
+              rows = []
+              for artifact in contract:
+                  for metadata_field in ("checksum", "signature", "provenance", "sbom"):
+                      metadata = assets[artifact[metadata_field]]
+                      if not isinstance(metadata.get("size"), int) or metadata["size"] <= 0:
+                          fail(f"required {metadata_field} asset is empty: {artifact[metadata_field]}")
+
+                  payload = request(assets[artifact["name"]]["url"], accept="application/octet-stream")
+                  checksum_document = request(assets[artifact["checksum"]]["url"], accept="application/octet-stream").decode("utf-8")
+                  checksums = {}
+                  for line in checksum_document.splitlines():
+                      match = SHA256_RE.match(line)
+                      if match:
+                          checksums[match.group(2)] = match.group(1).lower()
+                  expected_hash = checksums.get(artifact["name"]) or checksums.get("./" + artifact["name"])
+                  if not expected_hash:
+                      fail(f"{artifact['checksum']} has no SHA-256 entry for {artifact['name']}")
+                  actual_hash = hashlib.sha256(payload).hexdigest()
+                  if actual_hash != expected_hash:
+                      fail(f"checksum mismatch for {artifact['name']}: expected {expected_hash}, got {actual_hash}")
+                  rows.append(tuple(artifact[field] for field in required_fields))
+
+              write_summary("PASSED", f"verified {len(contract)} artifact(s) and all required evidence", rows)
+              print(f"Verified release {REPOSITORY}@{RELEASE_TAG} at {EXPECTED_COMMIT}")
+          except Exception as error:
+              if SUMMARY and (not Path(SUMMARY).exists() or not Path(SUMMARY).read_text(encoding="utf-8")):
+                  write_summary("FAILED", str(error))
+              print(f"release verification failed: {error}", file=sys.stderr)
+              sys.exit(1)
+          PYEOF
