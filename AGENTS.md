@@ -89,7 +89,20 @@ automerge major and minor updates once `packageRules` are layered
 
 `scripts/check-renovate-automerge-policy.py` and
 `project-starter/scripts/check-renovate-automerge-policy.py` are byte-identical
-copies today, with nothing enforcing that.
+copies. `scripts/test-renovate-automerge-policy.py` asserts that, so a
+divergence fails the `Policy checker self-test` step rather than going
+unnoticed.
+
+**But the gate does not fire for the copy that drifts.**
+`renovate-policy-check.yml` triggers on a `paths:` filter that lists
+`scripts/check-renovate-automerge-policy.py` and does **not** list
+`project-starter/scripts/check-renovate-automerge-policy.py`. Editing the
+canonical copy runs the sync check; editing the starter copy matches no path,
+so the workflow never runs and the assertion never executes. The starter copy
+is the one that matters most — `project-starter/` is copied verbatim into
+scaffolded repos, which never run this workflow — and it is the one the filter
+omits. See [#189](https://github.com/tuna-os/.github/issues/189) for the exact
+line to add.
 
 ## `.claude/skills/hive-contribute/`
 
