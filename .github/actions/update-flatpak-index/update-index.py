@@ -91,9 +91,26 @@ def build_image_entry(manifest_digest, config, tags, require_appstream):
 
 
 def merge_entry(index_data, repo_name, image_entry):
-    """Insert image_entry, replacing any existing image for the same arch."""
-    for result in index_data.setdefault("Results", []):
+    """Insert image_entry, replacing any existing image for the same arch.
+
+    The index file is shared: every application repo publishes into it, and
+    publish-flatpak-index replays this merge on a freshly cloned tip each time
+    it loses a push race. A structurally surprising entry therefore has to name
+    itself -- a bare KeyError in that job says nothing about which file or which
+    entry is wrong.
+    """
+    for position, result in enumerate(index_data.setdefault("Results", [])):
+        if "Name" not in result:
+            raise ValueError(
+                f"Malformed index: Results[{position}] has no \"Name\" key "
+                f"(keys: {sorted(result)})"
+            )
         if result["Name"] == repo_name:
+            if "Images" not in result:
+                raise ValueError(
+                    f"Malformed index: Results[{position}] ({repo_name}) has no "
+                    f"\"Images\" key (keys: {sorted(result)})"
+                )
             result["Images"] = [
                 image
                 for image in result["Images"]

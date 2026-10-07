@@ -24,6 +24,45 @@ the existing per-repo loop pattern) — `update-index.py` only ever replaces
 the entry for the architecture it was given, leaving other arches in the
 index untouched.
 
+## Tests
+
+`update-index.test.py` sits beside the script and the action runs it as its
+first step, the same arrangement [`ste-lint`](../ste-lint) uses. Standard
+library `unittest`, no dependencies, well under a second:
+
+```bash
+python3 .github/actions/update-flatpak-index/update-index.test.py
+```
+
+It guards the two properties a publish job depends on and the diagnosability
+of the shared index file:
+
+- **Label filtering.** An earlier revision kept only `org.flatpak.*` and
+  dropped `org.freedesktop.appstream.*`, which is what Flatpak builds a
+  remote's AppStream catalogue from — every app then rendered as a bare
+  application ID with no icon, licence or screenshots.
+- **Per-architecture merge.** `publish-flatpak-index` replays this script on a
+  freshly cloned index each time it loses a push race, so "replace only my own
+  architecture, leave every other entry alone" is what makes that retry loop
+  safe. A replay that dropped a sibling entry would have the loser of a race
+  delete the winner's release.
+- **Malformed input.** The index is written by every application repo. A
+  structurally surprising entry now raises a `ValueError` naming the offending
+  `Results[i]` and its keys, instead of a bare `KeyError` traceback that tells
+  the reader nothing about which entry is wrong.
+
+Set `run-tests: "false"` to skip the step. The tests run in the *consuming*
+job on purpose: callers pin this action at `@main`, so a commit here is live
+for them at their next run with no merge in their repo, and running the tests
+there is what makes a break surface on the first affected publish rather than
+in the served index.
+
+`tuna-os/flatpak-index` keeps its own suite for its byte-identical copy of the
+script at `scripts/update-index.py` (`tests/test_update_index.py`). That suite
+cannot gate a change made here, which is why this one exists; the two overlap
+deliberately. This copy stays compatible with it — the malformed-input change
+above was checked against that suite before landing.
+
 ## Migration status
 
 This action was added as the first step of the tunaos#1183 consolidation
