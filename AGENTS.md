@@ -67,6 +67,33 @@ is a second definition the org's check does not recognise. Migrating a repo
 onto the composite action is the fix that removes the copy rather than
 watching it.
 
+## Modifying shared workflows and actions: a safety checklist
+
+Every merge to `.github/workflows/*.yml` (reusable workflows) and `.github/actions/*` (composite actions) is **immediately live** for every repo that pins to `@main`. There is no staging phase and no way to roll back except another commit. Use this checklist before requesting a PR:
+
+### Before you change
+
+1. **Find all callers** — grep the org for `uses: tuna-os/.github/.github/workflows/<name>@` or `uses: tuna-os/.github/.github/actions/<name>@`. The search is rough because branch patterns hide in bash variables, but it gives you a starting set. Link to 2–3 representative callers in your PR.
+
+2. **Audit your inputs** — if you rename an input, add an input, change a default, or drop an input from the `inputs:` block:
+   - The old input name will **still be passed** by existing callers on their next run — it just becomes ignored. Document the deprecation grace period and when you'll drop it.
+   - Changing a default can break workflows silently. Example: if `publish-flatpak.yml` changes `registry: ghcr.io` to `registry: docker.io`, every caller that relied on the default now pushes to the wrong place.
+   - Adding a required input breaks all existing callers immediately — add it as optional with a default first, or coordinate the caller migration before merge.
+
+3. **Test the change** — clone a calling repo and run the workflow locally or in a test branch. At minimum:
+   - Verify the action/workflow still exits 0 with the new code.
+   - Check the logs for warnings or deprecated-input messages.
+   - If the action shells out to a script (like `update-flatpak-index/action.yml`), re-verify the shell-injection test cases (e.g., `tags: latest; touch /tmp/pwned` must NOT execute the `touch`).
+
+4. **Document breaking changes** — if you must break callers:
+   - Open an issue in each calling repo BEFORE you merge.
+   - Pair your PR with a cross-org communication (e.g., a pinned comment in `tuna-os/tunaOS#1234`).
+   - Give callers at least one release cycle (or 2 weeks) to migrate before the breaking change lands. Deploy the new version to a test branch first.
+
+### Why it matters
+
+The `.github/workflows/flatpak-tooling-drift-check.yml` workflow exists as an interim guard for exactly this problem: a shared script (`update-index.py`) was copied across 8 repos and they drifted independently. It now fails because the repo list fell out of sync with reality — and there's no way to repair it retroactively. Shared code must be maintained, or it becomes a liability.
+
 ## Default branches are not all `main`
 
 `ROADMAP-INDEX.md` is the org-wide inventory, and it exists because the
