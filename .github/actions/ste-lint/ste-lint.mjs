@@ -200,7 +200,10 @@ export function stripNonProse(markdown) {
   text = text.replace(/\[([^\]]*)\]\([^)]*\)/g, '$1');
   // Reference definitions and bare URLs.
   text = text.replace(/^\[[^\]]+\]:\s*\S+.*$/gm, '');
-  text = text.replace(/https?:\/\/\S+/g, ' ');
+  // URLs never swallow a trailing backtick: inline code like `https://...`
+  // ends with backtick, and \S would eat it — unbalancing every backtick
+  // below and gluing the rest of the file into one phantom "sentence".
+  text = text.replace(/https?:\/\/[^\s`]+/g, ' ');
   // Inline code: a symbol is not a word STE has an opinion about.
   text = text.replace(/`[^`]*`/g, ' ');
   // Badges/admonition markers.
