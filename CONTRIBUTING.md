@@ -20,8 +20,11 @@ of base OS × desktop × kernel × drivers, plus installer and migration tooling
 
 1. **Pick a repository and open an issue first** — describe the change and
    why before writing code. Small fixes (typos, docs) can skip this.
+   Check [ROADMAP-INDEX.md](ROADMAP-INDEX.md) to find active repositories and their
+   actual default branches — several don't use `main`.
 2. **Fork the repo** (or ask a maintainer for push access) and create a
    branch. We use the `arch/`, `fix/`, `feat/`, `chore/` prefix convention.
+   Target the repository's default branch (not an assumed `main`).
 3. **Check the repo's `AGENTS.md` / `justfile`** — most repos standardize
    build/test/lint behind `just` recipes (`just build`, `just test`, `just fix`).
 4. **Sign your commits** — every commit must be DCO-signed-off
