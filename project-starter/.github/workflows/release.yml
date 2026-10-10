@@ -7,10 +7,7 @@ on:
     branches: [main]
   workflow_dispatch:
 
-permissions:
-  contents: write
-  issues: write
-  pull-requests: write
+permissions: {}
 
 concurrency:
   group: release-${{ github.ref }}
@@ -20,8 +17,16 @@ jobs:
   release:
     if: github.repository == '<owner>/<repository>'
     runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+      issues: write
+      pull-requests: write
+    outputs:
+      release-tag: ${{ steps.contract.outputs.release-tag }}
+      expected-commit: ${{ steps.contract.outputs.expected-commit }}
+      expected-artifacts: ${{ steps.contract.outputs.expected-artifacts }}
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
           persist-credentials: false
@@ -35,4 +40,34 @@ jobs:
         run: |
           # Conventional commits should determine the version and changelog.
           # Publish packages/taps only with narrowly scoped release credentials.
+          # The release tool must export RELEASE_TAG for the contract step.
           echo "Run semantic release"
+      - name: Export release verification contract
+        id: contract
+        # Set RELEASE_TAG through GITHUB_ENV in the release tool step.
+        run: |
+          test -n "$RELEASE_TAG" || {
+            echo "The release tool did not export RELEASE_TAG" >&2
+            exit 1
+          }
+          test -s .github/release-artifacts.json || {
+            echo "Missing .github/release-artifacts.json" >&2
+            exit 1
+          }
+          jq -e 'type == "array" and length > 0' .github/release-artifacts.json >/dev/null
+          {
+            printf 'release-tag=%s\n' "$RELEASE_TAG"
+            printf 'expected-commit=%s\n' "$GITHUB_SHA"
+            printf 'expected-artifacts=%s\n' "$(jq -c . .github/release-artifacts.json)"
+          } >>"$GITHUB_OUTPUT"
+
+  verify-release:
+    needs: release
+    permissions:
+      contents: read
+    # Keep this cross-repository workflow pinned to a full commit SHA.
+    uses: tuna-os/.github/.github/workflows/reusable-release-verification.yml@6e3d5bd2ff5820124cff3c7624191b540a007ffa # feat/reusable-release-verification
+    with:
+      release-tag: ${{ needs.release.outputs.release-tag }}
+      expected-commit: ${{ needs.release.outputs.expected-commit }}
+      expected-artifacts: ${{ needs.release.outputs.expected-artifacts }}

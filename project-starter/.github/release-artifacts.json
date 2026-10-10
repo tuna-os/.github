@@ -1,0 +1,9 @@
+[
+  {
+    "name": "<artifact-name>",
+    "checksum": "<artifact-name>.sha256",
+    "signature": "<artifact-name>.sig",
+    "provenance": "<artifact-name>.intoto.jsonl",
+    "sbom": "<artifact-name>.spdx.json"
+  }
+]

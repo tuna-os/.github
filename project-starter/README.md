@@ -23,6 +23,29 @@ A curated, copyable baseline for TunaOS projects. It distils the practices that 
 | `scripts/check-renovate-automerge-policy.py` | CI gate: fails the build if `renovate.json` would automerge a major/minor update, even via rule layering (tuna-os/.github#12) | tuna-os/.github#1636 |
 | `flatpak-remote.yml` | Build an OCI Flatpak and update a hosted remote index | tuna-os/docs |
 | `docs-artifacts.yml` | Turn validated screenshots or walkthroughs into versioned docs | tunaOS → docs |
+| `release.yml` + `release-artifacts.json` | Publish a release, then fail closed unless its tag and integrity evidence verify | organisation release policy |
+
+## Release verification profile
+
+Before enabling `release.yml`:
+
+1. Replace `<owner>/<repository>`. Keep the reusable workflow pinned to a
+   reviewed, complete 40-character commit SHA from `tuna-os/.github`; never
+   replace it with `main`, a tag, or a shortened SHA.
+2. Make the release tool append `RELEASE_TAG=<published-tag>` to `GITHUB_ENV`.
+3. Replace the example entries in `.github/release-artifacts.json`. Each
+   published payload declares five distinct release asset names: the payload,
+   its SHA-256 checksum file, detached signature, provenance, and SBOM. Add one
+   object per payload.
+4. Keep `verify-release` dependent on the publishing job. It verifies that the
+   tag resolves to the publishing commit, requires every declared evidence
+   asset to be non-empty, downloads each payload, and checks its SHA-256 entry.
+   Missing assets, malformed contracts, checksum mismatches, and GitHub API
+   failures all fail the release workflow.
+
+The verifier has only `contents: read`; publication credentials remain confined
+to the publishing job. The release job is intentionally incomplete until a
+project replaces its tooling placeholders.
 
 ## Principles
 
