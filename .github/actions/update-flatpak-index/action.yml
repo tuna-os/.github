@@ -30,10 +30,29 @@ inputs:
     description: Fail instead of warning when the image carries no AppStream metadata
     required: false
     default: "false"
+  run-tests:
+    description: >-
+      Run update-index.py's own tests before publishing. They cover label
+      filtering (dropping org.freedesktop.appstream.* leaves software centres
+      with a bare application ID) and the per-architecture merge that makes
+      publish-flatpak-index's push-race retry safe. Callers pin this action at
+      @main, so a commit here is live for them at their next run with no merge
+      in their repo -- running the tests in the consuming job is what makes a
+      break surface on the first affected publish instead of in the index.
+    required: false
+    default: "true"
 
 runs:
   using: composite
   steps:
+    # Same precedent as the ste-lint action: the tests travel beside the thing
+    # they test, and the action executes them. Standard library only, so this
+    # needs no setup step and adds well under a second.
+    - name: Publisher tests
+      if: inputs.run-tests == 'true'
+      shell: bash
+      run: python3 "$GITHUB_ACTION_PATH/update-index.test.py"
+
     - name: Update index
       shell: bash
       # Inputs travel through env, never through ${{ }} interpolation into the

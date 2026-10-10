@@ -106,6 +106,11 @@ def merge_entry(index_data, repo_name, image_entry):
     """
     for result in index_data.setdefault("Results", []):
         if result["Name"] == repo_name:
+            if "Images" not in result:
+                raise ValueError(
+                    f"Malformed index: Results[{position}] ({repo_name}) has no "
+                    f"\"Images\" key (keys: {sorted(result)})"
+                )
             result["Images"] = [
                 image
                 for image in result["Images"]
