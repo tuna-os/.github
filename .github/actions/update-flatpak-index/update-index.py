@@ -90,21 +90,21 @@ def build_image_entry(manifest_digest, config, tags, require_appstream):
     }
 
 
-def merge_entry(index_data, repo_name, image_entry):
-    """Insert image_entry, replacing any existing image for the same arch.
+def app_ref(image):
+    """The application an index image belongs to, via its Flatpak ref label."""
+    return (image.get("Labels") or {}).get("org.flatpak.ref")
 
-    The index file is shared: every application repo publishes into it, and
-    publish-flatpak-index replays this merge on a freshly cloned tip each time
-    it loses a push race. A structurally surprising entry therefore has to name
-    itself -- a bare KeyError in that job says nothing about which file or which
-    entry is wrong.
+
+def merge_entry(index_data, repo_name, image_entry):
+    """Insert image_entry, replacing only the same application for the same arch.
+
+    One repository can serve several applications (e.g. the five installer
+    frontends under tuna-os/bootc-installer, told apart by org.flatpak.ref).
+    Replacing by architecture alone lets concurrent frontend publishes
+    overwrite each other until a single frontend is left standing, so the
+    replacement key is (architecture, application ref).
     """
-    for position, result in enumerate(index_data.setdefault("Results", [])):
-        if "Name" not in result:
-            raise ValueError(
-                f"Malformed index: Results[{position}] has no \"Name\" key "
-                f"(keys: {sorted(result)})"
-            )
+    for result in index_data.setdefault("Results", []):
         if result["Name"] == repo_name:
             if "Images" not in result:
                 raise ValueError(
@@ -114,7 +114,10 @@ def merge_entry(index_data, repo_name, image_entry):
             result["Images"] = [
                 image
                 for image in result["Images"]
-                if image["Architecture"] != image_entry["Architecture"]
+                if not (
+                    image["Architecture"] == image_entry["Architecture"]
+                    and app_ref(image) == app_ref(image_entry)
+                )
             ]
             result["Images"].append(image_entry)
             result["Images"].sort(key=lambda image: image["Architecture"])
