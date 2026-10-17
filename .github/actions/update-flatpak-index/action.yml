@@ -30,10 +30,22 @@ inputs:
     description: Fail instead of warning when the image carries no AppStream metadata
     required: false
     default: "false"
+  run-tests:
+    description: >-
+      Run the publisher's own unit tests before touching the index, so a
+      regression in @main fails on the first affected publish rather than
+      writing a bad entry to the served catalogue.
+    required: false
+    default: "true"
 
 runs:
   using: composite
   steps:
+    - name: Publisher tests
+      if: inputs.run-tests == 'true'
+      shell: bash
+      run: python3 "$GITHUB_ACTION_PATH/update-index.test.py"
+
     - name: Update index
       shell: bash
       # Inputs travel through env, never through ${{ }} interpolation into the
