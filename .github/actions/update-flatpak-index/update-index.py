@@ -104,7 +104,13 @@ def merge_entry(index_data, repo_name, image_entry):
     overwrite each other until a single frontend is left standing, so the
     replacement key is (architecture, application ref).
     """
-    for result in index_data.setdefault("Results", []):
+    for i, result in enumerate(index_data.setdefault("Results", [])):
+        if not isinstance(result, dict) or "Name" not in result or "Images" not in result:
+            keys = sorted(result.keys()) if isinstance(result, dict) else type(result).__name__
+            raise ValueError(
+                f"Malformed index entry Results[{i}]: missing 'Name' or 'Images' "
+                f"(keys: {keys})"
+            )
         if result["Name"] == repo_name:
             result["Images"] = [
                 image
