@@ -1,6 +1,6 @@
 # Org-wide ROADMAP inventory
 
-**Last verified**: 2026-09-02 · **Source**: `gh api repos/tuna-os/<repo>/contents/ROADMAP.md?ref=<default_branch>` against every active (non-archived) repository returned by `gh repo list tuna-os --limit 200`, which is currently **40** repositories.
+**Last verified**: 2026-10-22 · **Source**: `gh api repos/tuna-os/<repo>/contents/ROADMAP.md?ref=<default_branch>` against every active (non-archived) repository returned by `gh repo list tuna-os --limit 200`, which is currently **43** repositories.
 
 tuna-os/tunaOS#1295 and tuna-os/tunaOS#1361 both found the same problem from different
 angles: nobody — human or agent — could see at a glance which repos in the
@@ -24,64 +24,67 @@ scope problem, not a coverage problem: a table that only re-checks the repos it
 already lists cannot notice a repository being created. See
 `tuna-os/.github#52`.
 
-## Coverage: 36 / 40 active repos
+## Coverage: 37 / 43 active repos
 
 Roadmap coverage grew from 16/37 on August 14 to 36/37 on August 30 against the
-scope known at the time; re-measured against the full active set on September 2
-it is **36 / 40**. The four repositories without a roadmap:
+  scope known at the time, and to **37 / 43** on 2026-10-22 against the full
+  active set. The six repositories without a roadmap:
 
-- `kde-build-meta` — documented as superseded by `tromso`; its open retirement
-  tracker (`tuna-os/kde-build-meta#19`) is the appropriate lifecycle decision
-  instead of creating a roadmap for inactive work.
-- `spindle` — a Matrix homeserver, and the first network-facing multi-tenant
-  server software in the org. A roadmap is proposed in
-  `tuna-os/spindle` (branch `strategy/spindle-roadmap`); this row flips once it
-  merges.
-- `blueshell` — active, default branch `ptyxis-port`, not `main`.
-- `hive` — active, default branch `v4`, not `main`.
+- `PaperWM` — a GNOME Shell window manager (tiled, scrollable); no roadmap yet.
+- `ccleft` — remaining-quota accounting for AI coding-agent accounts (library,
+  CLI and Prometheus exporter); no roadmap yet.
+- `hive-operator` — a Kubernetes operator for the Hive fleet (rotation,
+  healing, credential rotation as CRDs); no roadmap yet.
+- `libcosmic` — the GUI platform toolkit for COSMIC apps and applets; no
+  roadmap yet.
+- `rdocx` — no roadmap yet.
+- `rust-atomicwrites` — an atomic file-writes utility; no roadmap yet.
 
 | Repo | Default branch | ROADMAP.md? |
 |---|---|---|
+| .github | main | ✅ |
+| PaperWM | release | ❌ |
 | Tavern | main | ✅ |
 | bluefin-cli | main | ✅ |
-| blueshell | ptyxis-port | ❌ |
-| bootc-installer | dev | ✅ (tuna-os/bootc-installer#14, merged 08-14) |
+| blueshell | ptyxis-port | ✅ |
+| bootc-installer | dev | ✅ |
 | bootc-migrate | main | ✅ |
+| bootsahi | main | ✅ |
+| branding | main | ✅ |
+| bst-ci | main | ✅ |
+| ccleft | main | ❌ |
+| changelog-action | master | ✅ |
+| compass | main | ✅ |
 | corral | main | ✅ |
 | docs | main | ✅ |
 | dualcut | main | ✅ |
+| finupdate | main | ✅ |
+| fisherman | dev | ✅ |
+| flatpak-index | main | ✅ |
+| gnome-hive-monitor | main | ✅ |
 | gtk-office-suite | main | ✅ |
+| hive | v4 | ✅ |
+| hive-operator | main | ❌ |
+| homebrew-tap | main | ✅ |
+| iced | master | ✅ |
 | iso-builder | main | ✅ |
+| libcosmic | master | ❌ |
+| mandelbrot | main | ✅ |
+| mariner | master | ✅ |
 | protota | main | ✅ |
+| quickcast | main | ✅ |
+| rdocx | main | ❌ |
+| remora | main | ✅ |
+| rust-atomicwrites | master | ❌ |
+| scoop-bucket | main | ✅ |
+| spindle | main | ✅ |
 | tacklebox | main | ✅ |
 | tromso | main | ✅ |
+| tuna-desktop | main | ✅ |
 | tunaOS | main | ✅ |
 | tunaos-packages | main | ✅ |
 | wootc | main | ✅ |
 | xfce-linux | main | ✅ |
-| .github | main | ✅ |
-| bootc-installer-asahi | main | ✅ |
-| branding | main | ✅ |
-| bst-ci | main | ✅ |
-| changelog-action | master | ✅ |
-| debian-copr | main | ✅ |
-| finupdate | main | ✅ |
-| fisherman | dev | ✅ |
-| flatpak-index | main | ✅ |
-| hive | v4 | ❌ |
-| homebrew-tap | main | ✅ |
-| kde-build-meta | master | ❌ |
-| mandelbrot | main | ✅ |
-| mariner | master | ✅ |
-| remora | main | ✅ |
-| scoop-bucket | main | ✅ |
-| spindle | main | ❌ (proposed: `strategy/spindle-roadmap`) |
-| suite-common | main | ✅ |
-| suite-common-rust | main | ✅ |
-| tuna-installer-cosmic | main | ✅ |
-| tuna-installer-kde | main | ✅ |
-| tuna-installer-niri | main | ✅ |
-| tuna-installer-xfce | main | ✅ |
 
 ## A note on "ROADMAP.md exists" vs. reachable
 
@@ -90,8 +93,8 @@ for two days that this exact inventory method would have missed, because it
 was merged to `main` while the repo's actual default branch is `dev` (82
 commits ahead). This table checks `ref=<default_branch>` explicitly, not a
 hardcoded `main`, specifically to avoid repeating that miss — several repos
-above (`bootc-installer`, `fisherman`, `changelog-action`, `kde-build-meta`,
-`mariner`, `blueshell`, `hive`) don't default to `main`.
+above (`bootc-installer`, `fisherman`, `changelog-action`, `mariner`,
+`PaperWM`, `iced`, `libcosmic`, `rust-atomicwrites`) don't default to `main`.
 
 ## A note on "every repo is listed" vs. every repo
 
@@ -99,10 +102,9 @@ There is a second failure mode above the first, and the September 2 pass hit
 it: a row can be wrong, but a *missing row* is silent. Three active repos were
 outside this table for as long as they had existed, so nothing in the inventory
 — not the count, not the `❌` list, not the `tuna-os/tunaOS/ROADMAP.md` Community
-section that checks against it — could report them. Re-running the block below
-starts from `gh repo list`, not from the rows already here, precisely so that
-repository creation is picked up rather than only roadmap absence. Refresh the
-scope, not just the answers.
+Re-running the script starts from `gh repo list`, not from the rows already
+here, precisely so that repository creation is picked up rather than only
+roadmap absence. Refresh the scope, not just the answers.
 
 ## Regenerating this table
 
