@@ -315,5 +315,10 @@ jobs:
       - name: Upload to release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        # The release lives in the calling repository. `repo-name` is the
+        # image path on the registry and the index key, which a suite that
+        # publishes several apps from one repository sets per app
+        # (tuna-os/gtk-office-suite publishes tuna-os/letters, tuna-os/tables
+        # and tuna-os/decks), so it is not where the tag's release is.
         run: |
-          gh release upload "${GITHUB_REF_NAME}" --clobber --repo "${{ inputs.repo-name }}" -- *.flatpak
+          gh release upload "${GITHUB_REF_NAME}" --clobber --repo "${GITHUB_REPOSITORY}" -- *.flatpak
