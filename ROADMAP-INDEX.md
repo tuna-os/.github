@@ -1,6 +1,6 @@
 # Org-wide ROADMAP inventory
 
-**Last verified**: 2026-10-26 · **Source**: `gh api repos/tuna-os/<repo>/contents/ROADMAP.md?ref=<default_branch>` against every active (non-archived) repository returned by `gh repo list tuna-os --limit 200`, which is currently **40** repositories.
+**Last verified**: 2026-11-02 · **Source**: `gh api repos/tuna-os/<repo>/contents/ROADMAP.md?ref=<default_branch>` against every active (non-archived) repository returned by `gh repo list tuna-os --limit 200`, which is currently **40** repositories.
 
 tuna-os/tunaOS#1295 and tuna-os/tunaOS#1361 both found the same problem from different
 angles: nobody — human or agent — could see at a glance which repos in the
@@ -24,7 +24,7 @@ scope problem, not a coverage problem: a table that only re-checks the repos it
 already lists cannot notice a repository being created. See
 `tuna-os/.github#52`.
 
-## Coverage: 37 / 43 active repos
+## Coverage: 37 / 45 active repos
 
 Roadmap coverage grew from 16/37 on August 14 to 36/37 on August 30 against the
 scope known at the time; re-measured against the full active set on September 2
@@ -45,6 +45,7 @@ it is **36 / 40**. The four repositories without a roadmap:
 | .github | main | ✅ |
 | PaperWM | release | ❌ |
 | Tavern | main | ✅ |
+| athens | bst | ❌ |
 | bluefin-cli | main | ✅ |
 | blueshell | ptyxis-port | ✅ |
 | bootc-installer | dev | ✅ |
@@ -71,6 +72,7 @@ it is **36 / 40**. The four repositories without a roadmap:
 | libcosmic | master | ❌ |
 | mandelbrot | main | ✅ |
 | mariner | master | ✅ |
+| postcard | main | ❌ |
 | protota | main | ✅ |
 | quickcast | main | ✅ |
 | rdocx | main | ❌ |
