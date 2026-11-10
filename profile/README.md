@@ -60,7 +60,6 @@ Built in this org and published on the TunaOS Flatpak remote, so they install on
 | [compass](https://github.com/tuna-os/compass) | A fast, keyboard-first launcher for the Linux desktop, written in Rust |
 | [dualcut](https://github.com/tuna-os/dualcut) | A dual-mode video editor: manual multi-track timeline plus a programmatic JSON document |
 | [quickcast](https://github.com/tuna-os/quickcast) | Quick GNOME screen recordings with microphone, webcam overlay and automatic file copying |
-| [finupdate](https://github.com/tuna-os/finupdate) | A graphical system updater for bootc images: bootc, flatpak, brew and distrobox in one place |
 
 ## Build and delivery
 

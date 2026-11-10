@@ -28,7 +28,7 @@ on:
   workflow_call:
     inputs:
       app-id:
-        description: Flatpak application ID, e.g. org.tunaos.finupdate
+        description: Flatpak application ID, e.g. org.tunaos.mariner
         required: true
         type: string
       manifest-path:
@@ -36,7 +36,7 @@ on:
         required: true
         type: string
       repo-name:
-        description: owner/repo on the registry and in the central index, e.g. tuna-os/finupdate
+        description: owner/repo on the registry and in the central index, e.g. tuna-os/mariner
         required: true
         type: string
       archs:
