@@ -37,7 +37,7 @@ through Renovate; see the [adoption policy](../../../docs/WORKFLOWS.md#adopting-
     oci-dir: oci/mandelbrot-oci-x86_64
     repo-name: tuna-os/mandelbrot
     tags: latest
-    token: ${{ secrets.FLATPAK_INDEX_TOKEN }}
+    ssh-key: ${{ secrets.FLATPAK_INDEX_DEPLOY_KEY }}
 ```
 
 For multi-arch publishes, call it once per architecture, same as before —
@@ -51,6 +51,20 @@ regenerates *this app's* entry against it before retrying (up to
 `update-index.py` only ever replaces the `(repo-name, architecture)` entry
 it was given — it never rewrites another app's entry, so replaying it on a
 newer base can't clobber a concurrent writer's change.
+
+## Credentials
+
+`ssh-key` is the private half of a write deploy key on `docs-repo`. For
+`tuna-os/docs` that key is the org secret `FLATPAK_INDEX_DEPLOY_KEY`, visible
+to the publishing repositories only. It can write to the index repository and
+nothing else, and it does not expire with a person's account, which is how
+the PAT in `FLATPAK_INDEX_TOKEN` failed every publish in November 2026
+(`permissions.push=HTTP 401`). `tuna-os/docs` lets deploy keys bypass its
+`Markdown Lint` required check (repository ruleset), so the index commit can
+land on `main` directly. The host key of github.com is pinned in the action.
+
+`token` still works for a caller that has not moved over; it is read only
+when `ssh-key` is empty.
 
 ## Migration status
 

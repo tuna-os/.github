@@ -48,7 +48,7 @@ Other workflows already use versioned labels managed by Renovate.
 | First Contributor Greetings | [`reusable-first-contributor.yml`](../.github/workflows/reusable-first-contributor.yml) | Greets first-time issue/PR authors | none (all optional) |
 | PR Reminders | [`reusable-pr-nudges.yml`](../.github/workflows/reusable-pr-nudges.yml) | Advisory reminders from the files a PR touches | none (all optional) |
 | Add Help Wanted Label | [`reusable-add-help-wanted.yml`](../.github/workflows/reusable-add-help-wanted.yml) | Labels unassigned issues with `help wanted` | none |
-| Publish Flatpak | [`publish-flatpak.yml`](../.github/workflows/publish-flatpak.yml) | Build → GHCR → central index pipeline | `app-id`, `manifest-path`, `repo-name` (+ `FLATPAK_INDEX_TOKEN` secret) |
+| Publish Flatpak | [`publish-flatpak.yml`](../.github/workflows/publish-flatpak.yml) | Build → GHCR → central index pipeline | `app-id`, `manifest-path`, `repo-name` (+ `FLATPAK_INDEX_DEPLOY_KEY` secret) |
 
 Inputs are grouped by responsibility below. `type` is the workflow-call input
 type; `required: true` inputs must be supplied by every caller.
@@ -354,7 +354,8 @@ that `uses:` this with `secrets: inherit`.
 
 | Secret | Required | Default | When to change it |
 |---|---|---|---|
-| `FLATPAK_INDEX_TOKEN` | **yes** | — | Token allowed to push `tuna-os/docs` (the central index). Map it with `secrets: inherit` or explicitly. |
+| `FLATPAK_INDEX_DEPLOY_KEY` | one of the two | — | Private half of the write deploy key on `tuna-os/docs` (the central index); org secret, visible to the publishing repos. Preferred. Map it with `secrets: inherit` or explicitly. |
+| `FLATPAK_INDEX_TOKEN` | one of the two | — | Legacy token allowed to push `tuna-os/docs`. Read only when `FLATPAK_INDEX_DEPLOY_KEY` is empty. |
 
 **Usage.**
 

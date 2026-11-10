@@ -49,10 +49,11 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Update remote index
         env:
-          FLATPAK_INDEX_TOKEN: ${{ secrets.FLATPAK_INDEX_TOKEN }}
+          FLATPAK_INDEX_DEPLOY_KEY: ${{ secrets.FLATPAK_INDEX_DEPLOY_KEY }}
         run: |
           # Check out the trusted central index repository, update it with the
           # OCI metadata, validate the result, and commit only if it changed.
-          # Reuse tuna-os/docs/.github/scripts/update-index.py where applicable.
-          test -n "$FLATPAK_INDEX_TOKEN"
+          # Use tuna-os/.github/.github/actions/publish-flatpak-index with its
+          # `ssh-key` input set to the FLATPAK_INDEX_DEPLOY_KEY secret instead.
+          test -n "$FLATPAK_INDEX_DEPLOY_KEY"
           echo "Implement the central index update here"

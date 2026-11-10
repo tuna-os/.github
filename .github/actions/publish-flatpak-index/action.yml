@@ -31,9 +31,19 @@ inputs:
     description: owner/repo of the central index repo to clone and push to
     required: false
     default: tuna-os/docs
+  ssh-key:
+    description: >-
+      Private half of a write deploy key on docs-repo (FLATPAK_INDEX_DEPLOY_KEY).
+      Preferred over `token`: it can write to docs-repo and nothing else, and
+      it does not expire with a person's account. Used when set.
+    required: false
+    default: ""
   token:
-    description: Token with push access to docs-repo (FLATPAK_INDEX_TOKEN)
-    required: true
+    description: >-
+      Token with push access to docs-repo (FLATPAK_INDEX_TOKEN). Used only when
+      ssh-key is empty; kept for callers that have not moved to the deploy key.
+    required: false
+    default: ""
   max-attempts:
     description: Max push attempts before failing the step
     required: false
@@ -52,6 +62,7 @@ runs:
         REGISTRY: ${{ inputs.registry }}
         TAGS: ${{ inputs.tags }}
         DOCS_REPO: ${{ inputs.docs-repo }}
+        FLATPAK_INDEX_SSH_KEY: ${{ inputs.ssh-key }}
         FLATPAK_INDEX_TOKEN: ${{ inputs.token }}
         MAX_ATTEMPTS: ${{ inputs.max-attempts }}
       run: |
@@ -63,37 +74,63 @@ runs:
           exit 1
         fi
 
+        WORKDIR="$(mktemp -d)"
+        # The deploy key is written under WORKDIR; remove it on every exit.
+        trap 'rm -rf "$WORKDIR"' EXIT
+        INDEX_REPO="$WORKDIR/index-repo"
+
         # Auth problems are not races: fail on them at once, with the real
         # reason, instead of retrying MAX_ATTEMPTS times and blaming a
         # concurrent writer. A caller whose repo cannot see the secret
         # passes an empty string here.
         export GIT_TERMINAL_PROMPT=0
-        if [ -z "$FLATPAK_INDEX_TOKEN" ]; then
-          echo "::error::token input is empty -- is FLATPAK_INDEX_TOKEN available to ${GITHUB_REPOSITORY}?" >&2
-          exit 1
-        fi
-        can_push="$(curl -sS -w '\n%{http_code}' -H "Authorization: Bearer $FLATPAK_INDEX_TOKEN" \
-          "https://api.github.com/repos/${DOCS_REPO}" \
-          | python3 -c 'import json,sys
+        if [ -n "$FLATPAK_INDEX_SSH_KEY" ]; then
+          # github.com's published host keys (https://api.github.com/meta,
+          # ssh_keys), pinned so the push never trusts an unverified host.
+          github_host_keys=(
+            "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOMqqnkVzrm0SdG6UOoqKLsabgH5C9okWi0dh2l9GKJl"
+            "ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBEmKSENjQEezOmxkZMy7opKgwFB9nkt5YRrYMjNuG5N87uRgg6CLrbo5wAdT/y6v0mKV0U2w0WZ2YB/++Tpockg="
+          )
+          printf 'github.com %s\n' "${github_host_keys[@]}" > "$WORKDIR/known_hosts"
+          (umask 077; printf '%s\n' "$FLATPAK_INDEX_SSH_KEY" > "$WORKDIR/deploy_key")
+          export GIT_SSH_COMMAND="ssh -i $WORKDIR/deploy_key -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o UserKnownHostsFile=$WORKDIR/known_hosts"
+          REMOTE_URL="git@github.com:${DOCS_REPO}.git"
+          # A deploy key authenticates for its own repository only, so a
+          # successful ls-remote proves this is a key of DOCS_REPO. Whether
+          # it has write access shows at the first push, which fails at once
+          # on anything that is not a lost race.
+          if ! ls_err="$(git ls-remote "$REMOTE_URL" HEAD 2>&1 >/dev/null)"; then
+            echo "$ls_err" >&2
+            echo "::error::ssh-key is not accepted for ${DOCS_REPO} -- is FLATPAK_INDEX_DEPLOY_KEY available to ${GITHUB_REPOSITORY}, and is its public half a deploy key on ${DOCS_REPO}?" >&2
+            exit 1
+          fi
+        elif [ -n "$FLATPAK_INDEX_TOKEN" ]; then
+          can_push="$(curl -sS -w '\n%{http_code}' -H "Authorization: Bearer $FLATPAK_INDEX_TOKEN" \
+            "https://api.github.com/repos/${DOCS_REPO}" \
+            | python3 -c 'import json,sys
         body, _, code = sys.stdin.read().rpartition("\n")
         print(json.loads(body).get("permissions", {}).get("push", False) if code == "200" else "HTTP " + code)')"
-        if [ "$can_push" != "True" ]; then
-          echo "::error::FLATPAK_INDEX_TOKEN cannot push to ${DOCS_REPO} (permissions.push=${can_push}): expired, revoked, or lacks Contents: write" >&2
+          if [ "$can_push" != "True" ]; then
+            echo "::error::FLATPAK_INDEX_TOKEN cannot push to ${DOCS_REPO} (permissions.push=${can_push}): expired, revoked, or lacks Contents: write -- pass ssh-key (FLATPAK_INDEX_DEPLOY_KEY) instead" >&2
+            exit 1
+          fi
+          REMOTE_URL="https://github.com/${DOCS_REPO}.git"
+        else
+          echo "::error::ssh-key and token are both empty -- is FLATPAK_INDEX_DEPLOY_KEY available to ${GITHUB_REPOSITORY}?" >&2
           exit 1
         fi
-
-        WORKDIR="$(mktemp -d)"
-        INDEX_REPO="$WORKDIR/index-repo"
 
         clone_docs() {
           rm -rf "$INDEX_REPO"
-          git clone --depth 1 "https://github.com/${DOCS_REPO}.git" "$INDEX_REPO"
-          # Header-based auth so the token never lands in .git/config, `git
-          # remote -v`, or process listings. Use stdin to keep token out of
-          # process arguments where it could be captured by ps/proc inspection.
-          local auth_header
-          auth_header="AUTHORIZATION: basic $(echo -n "x-access-token:$FLATPAK_INDEX_TOKEN" | base64 -w0)"
-          git -C "$INDEX_REPO" config --local http.extraheader "$auth_header"
+          git clone --depth 1 "$REMOTE_URL" "$INDEX_REPO"
+          if [ -z "$FLATPAK_INDEX_SSH_KEY" ]; then
+            # Header-based auth so the token never lands in .git/config, `git
+            # remote -v`, or process listings. Use stdin to keep token out of
+            # process arguments where it could be captured by ps/proc inspection.
+            local auth_header
+            auth_header="AUTHORIZATION: basic $(echo -n "x-access-token:$FLATPAK_INDEX_TOKEN" | base64 -w0)"
+            git -C "$INDEX_REPO" config --local http.extraheader "$auth_header"
+          fi
           git -C "$INDEX_REPO" config user.name "github-actions[bot]"
           git -C "$INDEX_REPO" config user.email "github-actions[bot]@users.noreply.github.com"
         }
@@ -147,5 +184,3 @@ runs:
           clone_docs
           attempt=$((attempt + 1))
         done
-
-        rm -rf "$WORKDIR"
