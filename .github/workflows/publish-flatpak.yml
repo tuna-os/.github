@@ -10,10 +10,12 @@ name: Publish Flatpak (reusable)
 # the ceiling every job inherits (a job may only be downgraded from it), so it
 # is the minimum `build-oci` needs (`contents: read`); `packages: write` and
 # `contents: write` are granted only on the `publish` and `release-bundles`
-# jobs that genuinely need them. The workflow declares the one secret it uses
-# (`FLATPAK_INDEX_TOKEN`) rather than `secrets: inherit`, and callers are
-# encouraged to pass named secrets too -- `secrets: inherit` still forwards
-# every caller secret, this workflow only ever reads the ones it declares.
+# jobs that genuinely need them. The workflow declares the secrets it uses
+# (`FLATPAK_INDEX_DEPLOY_KEY`, the write deploy key on tuna-os/docs, and the
+# legacy `FLATPAK_INDEX_TOKEN` PAT, read only when the key is absent) rather
+# than `secrets: inherit`, and callers are encouraged to pass named secrets
+# too -- `secrets: inherit` still forwards every caller secret, this workflow
+# only ever reads the ones it declares.
 #
 # Not used by Tavern: it has a prod/main branch split and a promotion flow
 # this workflow doesn't model. See tuna-os/tunaos#1183 for that follow-up.
@@ -105,8 +107,10 @@ on:
         type: string
         default: ghcr.io
     secrets:
+      FLATPAK_INDEX_DEPLOY_KEY:
+        required: false
       FLATPAK_INDEX_TOKEN:
-        required: true
+        required: false
 
 permissions:
   # Least privilege. This is a reusable workflow, so this default is the
@@ -298,6 +302,7 @@ jobs:
           repo-name: ${{ inputs.repo-name }}
           registry: ${{ inputs.registry }}
           tags: latest
+          ssh-key: ${{ secrets.FLATPAK_INDEX_DEPLOY_KEY }}
           token: ${{ secrets.FLATPAK_INDEX_TOKEN }}
 
   release-bundles:

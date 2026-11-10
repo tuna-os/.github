@@ -94,7 +94,8 @@ Cross-repository callers pin a complete commit SHA and keep it current through R
 - **Inputs:**
   - `oci-dir` *(required)*: Path to local OCI layout directory containing `index.json`.
   - `repo-name` *(required)*: Target registry repository name (e.g. `tuna-os/tavern`).
-  - `token` *(required)*: GitHub token with write permissions to `docs-repo` (`FLATPAK_INDEX_TOKEN`).
+  - `ssh-key` *(one of `ssh-key`/`token`)*: Private half of the write deploy key on `docs-repo` (org secret `FLATPAK_INDEX_DEPLOY_KEY`). Preferred; used when set.
+  - `token` *(one of `ssh-key`/`token`)*: Legacy GitHub token with write permissions to `docs-repo` (`FLATPAK_INDEX_TOKEN`). Read only when `ssh-key` is empty.
   - `index-file` *(optional, default: `static/flatpak/index/static`)*: Relative path to index in docs repo.
   - `registry` *(optional, default: `ghcr.io`)*: Container registry host.
   - `tags` *(optional, default: `latest`)*: Space-separated list of image tags.
@@ -108,7 +109,7 @@ Cross-repository callers pin a complete commit SHA and keep it current through R
       oci-dir: oci/mandelbrot-oci-x86_64
       repo-name: tuna-os/mandelbrot
       tags: latest
-      token: ${{ secrets.FLATPAK_INDEX_TOKEN }}
+      ssh-key: ${{ secrets.FLATPAK_INDEX_DEPLOY_KEY }}
   ```
 
 ---
