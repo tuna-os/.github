@@ -147,7 +147,16 @@ runs:
             --tags "${tag_args[@]}"
 
           pushd "$INDEX_REPO" >/dev/null
-          git add "$INDEX_FILE"
+          # tuna-os/docs keeps remote icon metadata and PNG files generated
+          # from the index, and its site build only checks them (`--check`).
+          # An index commit without them fails that build, so the index never
+          # deploys. Run the repo's own producer and stage what it writes.
+          stage=("$INDEX_FILE")
+          if [ -f scripts/prepare-flatpak-icons.mjs ]; then
+            node scripts/prepare-flatpak-icons.mjs
+            stage+=(static/flatpak)
+          fi
+          git add -A -- "${stage[@]}"
           if git diff --cached --quiet; then
             echo "No index changes for $REPO_NAME"
             popd >/dev/null
