@@ -18,6 +18,9 @@ This checklist supports the rollout in
 - Pin remote actions and reusable workflows to complete SHAs of commits.
   Keep a version comment for updates. Local `./` actions use the checkout's
   commit. Review the source repository and commit before adding a pin.
+  As an alternative for actions, run `gh actions-lock` to write
+  `.github/workflows/actions.lock`. The lockfile pins each tag to a commit.
+  It does not cover reusable workflows; pin those to SHAs.
 - Use `persist-credentials: false` for checkout unless a later Git operation
   needs those credentials. Give that operation only its required scope.
 - Keep uploads and secrets on trusted events. A fork pull request must not
@@ -51,9 +54,8 @@ python3 scripts/check-workflow-action-pins.py .github/workflows
 ```
 
 The checker reads declarations. It does not verify that each job needs every grant.
-It now rejects `permissions: {}`. Review that valid form separately
-until the checker supports it. Do not grant token
-access to satisfy that limitation. Review write scopes and event trust by job.
+It accepts `permissions: {}`. Do not grant token access to satisfy the checker.
+Review write scopes and event trust by job.
 
 Keep both checks in CI. The starter includes both jobs in the `required-checks`
 dependencies. Existing repositories can add them to their own CI gate. The

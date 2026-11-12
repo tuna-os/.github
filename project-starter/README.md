@@ -23,10 +23,11 @@ A curated, copyable baseline for TunaOS projects. It distils the practices that 
 | --- | --- | --- |
 | `ROADMAP.md` | Quarterly goals, priorities, and strategic direction — every project should plan in the open | tunaOS, tromso, tacklebox |
 | `Justfile` | One discoverable local command surface | tunaOS, bootc-migrate, wootc |
-| `renovate.json` | Automated dependency, action, digest, and pin updates | organisation default, tunaOS |
+| `renovate.json` | Automated dependency, action, digest, and pin updates; new action releases wait 7 days | organisation default, tunaOS |
 | `ci.yml` | Least-privilege checks, cancellation, and a branch-protection sentinel | bootc-migrate |
+| `actions-security.yml` + `actions.lock` | CI gate: `gh actions-lock --verify` checks that the lockfile pins every action to a commit; zizmor fails on any workflow security finding. Run `gh actions-lock` after you change a `uses:` line | [GitHub lockfiles](https://docs.github.com/en/actions/how-tos/secure-your-work/lock-workflow-dependencies) |
 | `scripts/check-workflow-permissions.py` | CI gate: fails the build if any workflow omits a top-level `permissions:` block, so jobs inherit the least-privilege scope (tuna-os/.github#155) | tuna-os/.github#155 |
-| `scripts/check-workflow-action-pins.py` | CI gate: rejects mutable action and reusable workflow references | tuna-os/.github#285 |
+| `scripts/check-workflow-action-pins.py` | CI gate: rejects mutable action and reusable workflow references that `actions.lock` does not pin | tuna-os/.github#285 |
 | `scripts/check-renovate-automerge-policy.py` | CI gate: fails the build if `renovate.json` would automerge a major/minor update, even via rule layering (tuna-os/.github#12) | tuna-os/tunaOS#1636 |
 | `flatpak-remote.yml` | Build an OCI Flatpak and update a hosted remote index | tuna-os/docs |
 | `docs-artifacts.yml` | Turn validated screenshots or walkthroughs into versioned docs | tunaOS → docs |

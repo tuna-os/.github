@@ -23,6 +23,13 @@
         "major"
       ],
       "automerge": false
+    },
+    {
+      "description": "Wait 7 days before taking a new action release (supply-chain cooldown).",
+      "matchManagers": [
+        "github-actions"
+      ],
+      "minimumReleaseAge": "7 days"
     }
   ]
 }
