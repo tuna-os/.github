@@ -90,7 +90,7 @@ Cross-repository callers pin a complete commit SHA and keep it current through R
 ### 4. `publish-flatpak-index`
 - **Location:** [`.github/actions/publish-flatpak-index/action.yml`](publish-flatpak-index/action.yml)
 - **Documentation:** [`.github/actions/publish-flatpak-index/README.md`](publish-flatpak-index/README.md)
-- **Description:** Clones `tuna-os/docs`, invokes `update-flatpak-index`, commits, and pushes back to GitHub with jittered exponential backoff and retry logic to gracefully resolve concurrent publisher collisions.
+- **Description:** Clones `tuna-os/docs`, invokes `update-flatpak-index`, runs the docs repository's Flatpak icon producer (`scripts/prepare-flatpak-icons.mjs`) when it is present, commits, and pushes back to GitHub with jittered exponential backoff and retry logic to gracefully resolve concurrent publisher collisions.
 - **Inputs:**
   - `oci-dir` *(required)*: Path to local OCI layout directory containing `index.json`.
   - `repo-name` *(required)*: Target registry repository name (e.g. `tuna-os/tavern`).

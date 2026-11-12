@@ -66,6 +66,16 @@ land on `main` directly. The host key of github.com is pinned in the action.
 `token` still works for a caller that has not moved over; it is read only
 when `ssh-key` is empty.
 
+## Generated icon artifacts
+
+`tuna-os/docs` generates remote icon metadata and PNG files from the index
+with `scripts/prepare-flatpak-icons.mjs`. Its site build and its sanity
+workflow only check these artifacts. An index commit without them fails the
+build, and then the new index does not deploy. When the cloned repository
+contains that script, the action runs it with `node` after
+`update-index.py` and commits the changes under `static/flatpak` with the
+index.
+
 ## Migration status
 
 Tracks tuna-os/tunaos#1183 (script duplication) and tuna-os/tunaos#2104
