@@ -43,9 +43,9 @@ class TestHasTopLevelPermissions(unittest.TestCase):
         doc = "permissions:\njobs:\n  build:\n"
         self.assertFalse(check._has_top_level_permissions(doc))
 
-    def test_empty_inline_map(self):
+    def test_empty_inline_map_revokes_every_scope(self):
         doc = "permissions: {}\n"
-        self.assertFalse(check._has_top_level_permissions(doc))
+        self.assertTrue(check._has_top_level_permissions(doc))
 
     def test_comment_only_block(self):
         doc = "permissions:\n  # TODO add scopes\n"

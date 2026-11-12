@@ -161,7 +161,7 @@ jobs:
       image: ghcr.io/flathub-infra/flatpak-github-actions:${{ inputs.flatpak-builder-image }}
       options: --privileged
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - uses: actions/checkout@v7.0.1
         with:
           persist-credentials: false
           # Empty `repository`/`ref` is not the same as omitting them for
@@ -199,7 +199,7 @@ jobs:
         # in production; the other five repos were on the older v6 with no
         # comment explaining an intentional avoidance of v6.7, so this is a
         # bump for them, not a downgrade for anyone.
-        uses: flatpak/flatpak-github-actions/flatpak-builder@79327416609af08178ad73b352877e51450790b3
+        uses: flatpak/flatpak-github-actions/flatpak-builder@v6.8
         with:
           manifest-path: ${{ inputs.manifest-path }}
           cache-key: flatpak-builder-${{ inputs.repo-name }}-${{ github.sha }}-${{ matrix.arch }}
@@ -209,12 +209,15 @@ jobs:
           arch: ${{ matrix.arch }}
 
       - name: Export OCI
+        env:
+          ARCH: ${{ matrix.arch }}
+          APP_ID: ${{ inputs.app-id }}
         run: |
-          flatpak build-bundle --oci --arch=${{ matrix.arch }} \
-            repo oci-${{ matrix.arch }} "${{ inputs.app-id }}"
+          flatpak build-bundle --oci --arch="$ARCH" \
+            repo "oci-$ARCH" "$APP_ID"
 
       - name: Upload OCI artifact
-        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
+        uses: actions/upload-artifact@v7.0.2
         with:
           name: oci-${{ matrix.arch }}
           path: oci-${{ matrix.arch }}/
@@ -222,7 +225,7 @@ jobs:
 
       - name: Upload bundle artifact
         if: inputs.attach-bundles
-        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
+        uses: actions/upload-artifact@v7.0.2
         with:
           name: bundle-${{ matrix.arch }}
           path: ${{ inputs.app-id }}-${{ matrix.arch }}.flatpak
@@ -254,7 +257,7 @@ jobs:
       # "missing oci-x86_64". Explicit name+path downloads don't have that
       # match-count-dependent behavior.
       - name: Download ${{ matrix.arch }} OCI artifact
-        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333
+        uses: actions/download-artifact@v8.0.2
         with:
           name: oci-${{ matrix.arch }}
           path: oci-${{ matrix.arch }}
@@ -262,34 +265,38 @@ jobs:
       - name: Log in to GHCR
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          IMAGE_REGISTRY: ${{ inputs.registry }}
           # Some runner fleets' default container auth path
           # (/run/containers/$UID/auth.json) isn't writable.
           REGISTRY_AUTH_FILE: ${{ runner.temp }}/auth.json
         run: |
-          echo "$GITHUB_TOKEN" | skopeo login "${{ inputs.registry }}" -u "${{ github.actor }}" --password-stdin
+          echo "$GITHUB_TOKEN" | skopeo login "$IMAGE_REGISTRY" -u "$GITHUB_ACTOR" --password-stdin
 
       - name: Push OCI to registry
         env:
           REGISTRY_AUTH_FILE: ${{ runner.temp }}/auth.json
           PRIMARY: ${{ needs.arch-plan.outputs.primary }}
+          ARCH: ${{ matrix.arch }}
+          IMAGE_REGISTRY: ${{ inputs.registry }}
+          IMAGE_REPO: ${{ inputs.repo-name }}
         run: |
           set -euo pipefail
-          arch="${{ matrix.arch }}"
+          arch="$ARCH"
           dir="oci-${arch}"
           [ -d "$dir" ] || { echo "::error::missing $dir"; exit 1; }
           version_tag=""
           if [[ "$GITHUB_REF" == refs/tags/* ]]; then
-            version_tag="${{ github.ref_name }}"
+            version_tag="$GITHUB_REF_NAME"
           fi
-          skopeo copy "oci:${dir}" "docker://${{ inputs.registry }}/${{ inputs.repo-name }}:latest-${arch}"
+          skopeo copy "oci:${dir}" "docker://${IMAGE_REGISTRY}/${IMAGE_REPO}:latest-${arch}"
           if [ -n "$version_tag" ]; then
-            skopeo copy "oci:${dir}" "docker://${{ inputs.registry }}/${{ inputs.repo-name }}:${version_tag}-${arch}"
+            skopeo copy "oci:${dir}" "docker://${IMAGE_REGISTRY}/${IMAGE_REPO}:${version_tag}-${arch}"
           fi
           # :latest (no arch suffix) tracks the primary arch, chosen by the
           # plan -- only the primary instance pushes it, so it never depends on
           # which matrix instance happens to run first.
           if [ "$arch" = "$PRIMARY" ]; then
-            skopeo copy "oci:${dir}" "docker://${{ inputs.registry }}/${{ inputs.repo-name }}:latest"
+            skopeo copy "oci:${dir}" "docker://${IMAGE_REGISTRY}/${IMAGE_REPO}:latest"
           fi
 
       # One publish-flatpak-index call per arch in the plan (only x86_64/aarch64
@@ -313,7 +320,7 @@ jobs:
     permissions:
       contents: write  # gh release upload needs to create release assets.
     steps:
-      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333
+      - uses: actions/download-artifact@v8.0.2
         with:
           pattern: 'bundle-*'
           merge-multiple: true

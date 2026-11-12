@@ -8,8 +8,9 @@ privilege baseline is enforced in CI.
 
 It is intentionally dependency-free: it parses just enough YAML structure
 (top-level mapping keys and their indentation) to answer one question -- does
-this file declare a non-empty `permissions:` mapping at the top level? -- so it
-runs on GitHub's ubuntu runners without a `pip install` step.
+this file declare a `permissions:` value at the top level? -- so it runs on
+GitHub's ubuntu runners without a `pip install` step. `permissions: {}`
+counts: it grants no scopes, the strictest declaration there is.
 
 Usage:
     python3 check-workflow-permissions.py .github/workflows [--json] [--quiet]
@@ -41,11 +42,12 @@ def _iter_documents(text):
 
 
 def _has_top_level_permissions(document):
-    """Return True if `document` declares a non-empty top-level `permissions:` block.
+    """Return True if `document` declares a top-level `permissions:` value.
 
-    "Non-empty" means the key exists and has at least one child scope entry
-    (an indented, non-comment line). A key present only as a comment, or with an
-    empty mapping, does not count -- that still inherits the default scope.
+    The key must have an inline value (`permissions: read-all`, or
+    `permissions: {}`, which revokes every scope) or at least one child scope
+    entry (an indented, non-comment line). A key present only as a comment, or
+    a bare `permissions:` with no scopes under it, does not count.
     """
     in_permissions = False
     has_child = False
@@ -64,9 +66,10 @@ def _has_top_level_permissions(document):
             if match.group(1) == "permissions":
                 in_permissions = True
                 inline = match.group(2).strip()
-                # An inline scalar value (e.g. "permissions: read") declares
-                # intent; an inline empty map (permissions: {}) does not.
-                has_child = bool(inline) and inline != "{}"
+                # An inline value declares intent: a scalar such as
+                # "permissions: read-all", or "permissions: {}", which grants
+                # no scopes at all.
+                has_child = bool(inline)
             continue
         # indent > 0: a child line inside the permissions block.
         if in_permissions:
