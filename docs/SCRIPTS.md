@@ -115,12 +115,12 @@ python3 scripts/test_check_workflow_permissions.py
 ```
 
 #### Exit Codes
-- `0`: Compliant — every workflow file declares an explicit, non-empty top-level `permissions:` block.
+- `0`: Compliant — every workflow file declares an explicit top-level `permissions:` block. `permissions: {}` counts: it grants no scopes.
 - `1`: Violation detected — one or more workflow files lack a top-level `permissions:` block (or the specified directory does not exist).
 
 #### Common Failure Scenarios & Troubleshooting
 - **Error:** `❌ 1 workflow(s) missing an explicit top-level permissions block: .github/workflows/foo.yml: missing top-level permissions: block`
-  - *Cause:* The workflow file either omits `permissions:`, declares an empty map (`permissions: {}`), or only declares permissions inside individual jobs rather than at the top level.
+  - *Cause:* The workflow file either omits `permissions:`, declares a bare `permissions:` key with no scopes, or only declares permissions inside individual jobs rather than at the top level.
   - *Fix:* Add a top-level `permissions:` block near the top of the workflow file:
     ```yaml
     name: CI
@@ -137,13 +137,14 @@ python3 scripts/test_check_workflow_permissions.py
 ### 3. `check-workflow-action-pins.py`
 
 #### Purpose & Policy Background
-Enforces supply-chain security standards ([tuna-os/.github#285](https://github.com/tuna-os/.github/issues/285)): **external GitHub Actions references (`uses:`) must be pinned to full 40-character commit SHAs**.
+Enforces supply-chain security standards ([tuna-os/.github#285](https://github.com/tuna-os/.github/issues/285)): **external GitHub Actions references (`uses:`) must be pinned to full 40-character commit SHAs, or locked in the workflow directory's `actions.lock`**.
 
 A `uses:` reference targeting mutable tags (such as `@v4`, `@v7.0.1`) or branches (such as `@main`) executes whatever code exists at that ref when the workflow triggers. If an upstream repository is compromised or a tag is moved, malicious code can execute in CI. Pinning to an immutable 40-character commit SHA prevents this attack vector.
 
 Special rules:
 - **Local actions:** Relative path references (e.g. `uses: ./.github/actions/foo`) are exempt because they are already bound to the repository commit being checked out.
 - **Self-repository references:** References into the repository being checked (passed via `--self-repo owner/repo`) are exempt from SHA pinning because they resolve to the same repository tree.
+- **Lockfile:** If the directory holds an `actions.lock` written by [`gh actions-lock`](https://docs.github.com/en/actions/how-tos/secure-your-work/lock-workflow-dependencies), a tag or branch reference passes when the lockfile lists it for that workflow. The lockfile pins it to a commit SHA. Reusable workflow calls (`owner/repo/.github/workflows/x.yml@ref`) have no lockfile entry and still need a SHA. Run `gh actions-lock --verify` in CI to check that the lockfile is current; this script checks only coverage.
 
 #### CLI Usage & Examples
 ```bash
@@ -161,14 +162,14 @@ python3 scripts/test_check_workflow_action_pins.py
 ```
 
 #### Exit Codes
-- `0`: Compliant — all external `uses:` action references are pinned to full 40-character hex commit SHAs.
-- `1`: Violation detected — one or more `uses:` lines reference mutable branches or version tags.
+- `0`: Compliant — all external `uses:` action references are pinned to full 40-character hex commit SHAs or locked in `actions.lock`.
+- `1`: Violation detected — one or more `uses:` lines reference mutable branches or version tags that no lockfile entry covers.
 - `2`: Usage error (e.g. target directory does not exist).
 
 #### Common Failure Scenarios & Troubleshooting
-- **Error:** `❌ 1 GitHub Actions reference(s) not pinned to a commit SHA: uses reference actions/checkout@v4 is pinned to mutable ref @v4 -- use a 40-character commit SHA`
-  - *Cause:* An action is pinned to a release tag (`@v4`) or branch (`@main`).
-  - *Fix:* Resolve the full 40-character commit SHA of the tag or release and include an inline comment indicating the version:
+- **Error:** `❌ 1 GitHub Actions reference(s) not pinned to a commit SHA or locked: uses reference actions/checkout@v4 is pinned to mutable ref @v4 -- use a 40-character commit SHA or lock it with gh actions-lock`
+  - *Cause:* An action is pinned to a release tag (`@v4`) or branch (`@main`) that `actions.lock` does not list for that workflow.
+  - *Fix:* Run `gh actions-lock` to lock the reference, or resolve the full 40-character commit SHA of the tag or release and include an inline comment indicating the version:
     ```yaml
     - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
     ```

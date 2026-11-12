@@ -26,12 +26,12 @@ jobs:
     runs-on: ubuntu-26.04
     steps:
       - name: Checkout
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        uses: actions/checkout@v7.0.1
         with:
           persist-credentials: false
 
       - name: Set up Python
-        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        uses: actions/setup-python@v7.1.0
         with:
           python-version: "3.x"
 
@@ -44,7 +44,7 @@ jobs:
         run: python3 scripts/roadmap-index.py --write
 
       - name: Open a PR on drift
-        uses: peter-evans/create-pull-request@3ffccacd46053766916f087ce41d627c0b8cf2d1 # v8.1.3
+        uses: peter-evans/create-pull-request@v8.1.3
         with:
           branch: roadmap-index/refresh
           delete-branch: true
