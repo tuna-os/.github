@@ -158,5 +158,13 @@ class TestMain(unittest.TestCase):
         self.assertEqual(buf.getvalue(), "")
 
 
+class TestDistributedCopy(unittest.TestCase):
+    def test_starter_checker_matches_canonical_source(self):
+        # project-starter/ is copied verbatim into new repositories, which never
+        # run this test; a divergent copy ships unnoticed unless it fails here.
+        starter = SCRIPT_DIR.parent / "project-starter/scripts/check-workflow-permissions.py"
+        self.assertEqual(SCRIPT_PATH.read_bytes(), starter.read_bytes())
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)

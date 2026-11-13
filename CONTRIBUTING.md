@@ -142,15 +142,15 @@ from it.
 
 | Utility | Canonical source | Copied to | Drift enforced |
 |---|---|---|---|
-| `check-renovate-automerge-policy.py` | `tuna-os/.github/scripts/` | `project-starter/scripts/` (shipped to new repos) | No — byte-identical today, but nothing enforces it |
-| `check-workflow-permissions.py` | `tuna-os/.github/scripts/` | `project-starter/scripts/` (shipped to new repos) | No — byte-identical today, but nothing enforces it |
+| `check-renovate-automerge-policy.py` | `tuna-os/.github/scripts/` | `project-starter/scripts/` (shipped to new repos) | Yes — `scripts/test-renovate-automerge-policy.py` |
+| `check-workflow-action-pins.py` | `tuna-os/.github/scripts/` | `project-starter/scripts/` (shipped to new repos) | Yes — `scripts/test_check_workflow_action_pins.py` |
+| `check-workflow-permissions.py` | `tuna-os/.github/scripts/` | `project-starter/scripts/` (shipped to new repos) | Yes — `scripts/test_check_workflow_permissions.py`; a starter-only edit does not trigger it yet (#369) |
 | `update-index.py` | `tuna-os/flatpak-index/scripts/` | `.github/actions/update-flatpak-index/` here; `.github/scripts/` in the flatpak-publishing app repos | Yes — weekly `flatpak-tooling-drift-check.yml` |
 
-**Keeping copies in sync.** Fix `check-renovate-automerge-policy.py` and
-`check-workflow-permissions.py` in `tuna-os/.github/scripts/`, then re-copy both
-into `project-starter/scripts/` in the same commit so new repos start from the
-corrected version. There is no automated gate — verify the two blobs are
-byte-identical whenever you touch either. Fix `update-index.py` first in
+**Keeping copies in sync.** Fix a `check-*.py` script in
+`tuna-os/.github/scripts/`, then re-copy it into `project-starter/scripts/` in
+the same commit so new repos start from the corrected version. Each script's
+test asserts the two copies are byte-identical. Fix `update-index.py` first in
 `tuna-os/flatpak-index/scripts/` (the canonical source), update the synced copy
 in `tuna-os/.github/.github/actions/update-flatpak-index/` to match, and get app
 repos off their own copies by migrating them onto the reusable
@@ -161,8 +161,8 @@ carries a divergent local copy.
 **Verification cadence.** `update-index.py` is checked continuously by
 `flatpak-tooling-drift-check.yml` (scheduled Mondays 06:00 UTC, and on
 `workflow_dispatch`), which opens or comments on an issue whenever a repo has
-drifted. The `check-*` scripts have no drift check today; add a byte-comparison
- in CI if you want the project-starter copy enforced rather than trusted.
+drifted. The `check-*` scripts are compared byte for byte by their own tests
+whenever those tests run; see `docs/SCRIPTS.md` for which workflow runs each one.
 
 ## CI/CD security
 
