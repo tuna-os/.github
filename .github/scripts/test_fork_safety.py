@@ -25,6 +25,8 @@ _spec.loader.exec_module(fork_safety)
 
 
 class TestForkSafety(unittest.TestCase):
+    PRT_MESSAGE = "uses `pull_request_target` which exposes secrets to untrusted code."
+
     def setUp(self):
         self.dir = tempfile.TemporaryDirectory()
         self.workflows = Path(self.dir.name) / "workflows"
@@ -44,12 +46,35 @@ class TestForkSafety(unittest.TestCase):
         self.assertEqual(
             fork_safety.validate_fork_safety(str(Path(self.dir.name) / "none")), [])
 
-    def test_pull_request_target_is_violation(self):
-        # validate_fork_safety only iterates workflows that carry an exact
-        # `pull_request` trigger, so a workflow that is *only* pull_request_target
-        # is never checked. The original heredoc guards `pull_request_target`
-        # inside _check_workflow, which runs only when the workflow is also a
-        # pull_request workflow -- hence the combined trigger list below.
+    def test_pull_request_target_only_is_violation(self):
+        # The usual pull_request_target workflow carries no `pull_request`
+        # trigger. Each shape `on:` can take must be reported, and reported
+        # once: a string, a list, and a mapping.
+        body = (
+            "jobs:\n"
+            "  build:\n"
+            "    runs-on: ubuntu-latest\n"
+            "    steps:\n"
+            "      - run: echo hi\n"
+        )
+        for name, trigger in {
+            "string.yml": "on: pull_request_target\n",
+            "list.yml": "on: [push, pull_request_target]\n",
+            "mapping.yml": "on:\n  pull_request_target:\n    types: [opened]\n",
+        }.items():
+            with self.subTest(name=name):
+                violations = self.check(name, trigger + body)
+                self.assertEqual(
+                    [v for v in violations if v.startswith(name)],
+                    [f"{name}: {self.PRT_MESSAGE}"],
+                )
+
+    def test_pull_request_target_only_fails_main(self):
+        self.write("prt.yml", "on: pull_request_target\njobs: {}\n")
+        self.assertEqual(fork_safety.main(["--workflows-dir", str(self.workflows)]), 1)
+
+    def test_pull_request_target_beside_pull_request_is_violation(self):
+        # Both triggers on one workflow: reported once, by the same rule.
         violations = self.check(
             "prt.yml",
             "on: [pull_request, pull_request_target]\n"
@@ -63,7 +88,10 @@ class TestForkSafety(unittest.TestCase):
             "    steps:\n"
             "      - run: echo hi\n",
         )
-        self.assertTrue(any("pull_request_target" in v for v in violations))
+        self.assertEqual(
+            [v for v in violations if "pull_request_target" in v],
+            [f"prt.yml: {self.PRT_MESSAGE}"],
+        )
 
     def test_write_action_without_guard_is_violation(self):
         violations = self.check(
