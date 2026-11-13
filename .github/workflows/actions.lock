@@ -19,7 +19,6 @@ workflows:
         - 'actions/download-artifact@v8.0.2'
         - 'actions/upload-artifact@v7.0.2'
         - 'flatpak/flatpak-github-actions@v6.8'
-        - 'tuna-os/.github@main'
     '.github/workflows/release-verification-test.yml':
         - 'actions/checkout@v7.0.1'
     '.github/workflows/renovate-policy-check.yml':
@@ -133,7 +132,7 @@ dependencies:
         repo_id: 197176365
     'tuna-os/.github@main':
         ref: 'main'
-        commit: 'sha1-4078f531ac74703f203bde835ef6c25e9321b97b'
+        commit: 'sha1-45a022d193a57329be2fc76c2d9f14cd317b68b9'
         owner_id: 223733964
         repo_id: 1187761922
         uses:

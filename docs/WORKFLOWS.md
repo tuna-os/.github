@@ -72,10 +72,21 @@ the revision and available security updates.
 
 The existing pin-checker `--self-repo` exemption covers only references into
 the repository being checked. It is not a blanket exemption for first-party
-org code. This documentation change does not alter that exception. Existing
-same-repository nested `@main` references can still move independently of a
-consumer's pinned workflow; a top-level pin is not a guarantee that all
-transitive action references are immutable.
+org code. This documentation change does not alter that exception.
+
+`publish-flatpak.yml` references its own composite actions (`arch-plan`,
+`publish-flatpak-index`) as `$/.github/actions/...`, which GitHub resolves to
+this repository at the commit the caller pinned, so those actions always match
+the pinned workflow. The other reusable workflows still reference their
+actions as `tuna-os/.github/.github/actions/<name>@main`. Callers' lockfiles
+don't cover a called workflow's actions; this repository's
+`.github/workflows/actions.lock` does, so those `@main` references run the
+commit locked for `tuna-os/.github@main` there. After merging a change to one
+of those actions, run `gh actions-lock --relock` here and merge that too, or
+callers keep running the previously locked action. (They stay on `@main`
+because `gh actions-lock` rewrites the SHA pins inside a `$/` composite action
+to tags, and zizmor's `unpinned-uses` rejects tags in `action.yml` files:
+lockfiles don't lock composite action definitions yet, gh-actions-lock#183.)
 
 Two things are shared and two are per-caller:
 
@@ -442,8 +453,10 @@ caller still points at its configured ref. To exercise the candidate:
 
 For composite actions a reusable workflow depends on (e.g. `ste-lint` and
 `publish-flatpak-index`), ensure the test actually references the candidate
-action SHA too. Existing same-repository `@main` references otherwise run
-that branch's action code, not necessarily the edited candidate.
+action SHA too. `publish-flatpak.yml` uses `$/` references, so calling the
+candidate workflow commit also runs that commit's actions. The other
+workflows' `@main` references run the commit locked in this repository's
+`actions.lock`, not necessarily the edited candidate.
 
 ## Troubleshooting
 

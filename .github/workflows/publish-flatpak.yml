@@ -143,7 +143,7 @@ jobs:
       # planner from this repo and exits non-zero on any invalid list.
       - name: Validate and normalize archs
         id: plan
-        uses: tuna-os/.github/.github/actions/arch-plan@main
+        uses: $/.github/actions/arch-plan
         with:
           archs: ${{ inputs.archs }}
 
@@ -303,7 +303,7 @@ jobs:
       # exist today across every tuna-os app) -- each call is its own
       # independent clone/retry/push cycle, same as before consolidation.
       - name: Update central index — ${{ matrix.arch }}
-        uses: tuna-os/.github/.github/actions/publish-flatpak-index@main
+        uses: $/.github/actions/publish-flatpak-index
         with:
           oci-dir: oci-${{ matrix.arch }}
           repo-name: ${{ inputs.repo-name }}
