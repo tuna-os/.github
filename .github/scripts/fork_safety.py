@@ -8,7 +8,8 @@ issues a read-only token and empties every secret, so this checks that:
   1. every ``pull_request`` workflow declares an explicit ``permissions:`` block
      (or a job that only ``uses:`` another workflow),
   2. no workflow uses ``pull_request_target`` (it runs with secrets against
-     untrusted code), and
+     untrusted code) -- checked for every workflow, with or without a
+     ``pull_request`` trigger beside it, and
   3. every step that writes or references a secret is guarded by a fork-aware
      ``if:`` condition.
 
@@ -66,13 +67,27 @@ def validate_fork_safety(workflows_dir: str = DEFAULT_WORKFLOWS_DIR):
         return []
 
     files = sorted(directory.glob("*.yml")) + sorted(directory.glob("*.yaml"))
-    pr_workflows = [f for f in files if "pull_request" in get_triggers(load_workflow(f))]
+    triggers = {f: get_triggers(load_workflow(f)) for f in files}
+    pr_workflows = [f for f in files if "pull_request" in triggers[f]]
+    # The usual pull_request_target workflow has no pull_request trigger, so it
+    # is not in pr_workflows. Rules 1 and 3 are about the read-only fork token
+    # and do not apply to it; rule 2 does.
+    target_only = [
+        f for f in files
+        if "pull_request_target" in triggers[f] and f not in pr_workflows
+    ]
 
     print(f"Checking {len(pr_workflows)} pull_request workflow(s) in {directory}...")
     violations = []
     for wf in pr_workflows:
         violations.extend(_check_workflow(wf))
+    for wf in target_only:
+        violations.append(_pull_request_target_violation(wf))
     return violations
+
+
+def _pull_request_target_violation(wf: Path) -> str:
+    return f"{wf.name}: uses `pull_request_target` which exposes secrets to untrusted code."
 
 
 def _check_workflow(wf: Path):
@@ -92,7 +107,7 @@ def _check_workflow(wf: Path):
 
     # 2. pull_request_target runs untrusted code with the secret store attached.
     if "pull_request_target" in get_triggers(doc):
-        violations.append(f"{wf.name}: uses `pull_request_target` which exposes secrets to untrusted code.")
+        violations.append(_pull_request_target_violation(wf))
 
     # 3. Each write/secret step must be guarded against forks.
     for job_id, job in jobs.items():
