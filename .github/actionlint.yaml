@@ -3,3 +3,10 @@
 self-hosted-runner:
   labels:
     - ubuntu-26.04
+
+# actionlint 1.7.12 doesn't know the `$/` self-repository action syntax.
+# https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-syntax#example-using-an-action-in-the-same-repository-as-the-workflow-at-the-running-commit-recommended
+paths:
+  .github/workflows/publish-flatpak.yml:
+    ignore:
+      - 'specifying action "\$/\.github/actions/[^"]+" in invalid format because ref is missing'
