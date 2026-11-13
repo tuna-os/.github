@@ -59,7 +59,7 @@ jobs:
           # tuna-installer-* repos were folded into bootc-installer and no
           # longer exist, so they are not listed. Add a repo here when it
           # starts publishing a flatpak.
-          REPOS="Tavern bootc-installer blueshell docs dualcut finupdate gtk-office-suite mandelbrot"
+          REPOS="Tavern bootc-installer blueshell docs dualcut gtk-office-suite mandelbrot"
 
           # What counts as "uses the shared tooling": the reusable workflow,
           # or either composite action called directly.

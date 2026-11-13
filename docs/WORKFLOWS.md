@@ -335,9 +335,9 @@ that `uses:` this with `secrets: inherit`.
 
 | Input | Type | Required | Default | When to change it |
 |---|---|---|---|---|
-| `app-id` | string | **yes** | — | Flatpak application ID, e.g. `org.tunaos.finupdate`. |
+| `app-id` | string | **yes** | — | Flatpak application ID, e.g. `org.tunaos.mariner`. |
 | `manifest-path` | string | **yes** | — | Path to the flatpak-builder manifest. |
-| `repo-name` | string | **yes** | — | `owner/repo` on the registry and in the central index, e.g. `tuna-os/finupdate`. |
+| `repo-name` | string | **yes** | — | `owner/repo` on the registry and in the central index, e.g. `tuna-os/mariner`. |
 | `archs` | string | no | `'["x86_64","aarch64"]'` | JSON array of architectures, limited to `x86_64` and `aarch64`. A preflight job fails the run before any build if the list is empty, has a duplicate, or names another value. Each arch is a separate build job and a separate index update. Unsuffixed `:latest` tracks `x86_64` when it is in the list, otherwise the first arch. |
 | `flatpak-builder-image` | string | no | `gnome-50` | `flathub-infra/flatpak-github-actions` image tag (without the `ghcr.io/flathub-infra/flatpak-github-actions:` prefix). |
 | `checkout-submodules` | boolean | no | `false` | Checkout submodules of the source. |
@@ -364,9 +364,9 @@ jobs:
   publish:
     uses: tuna-os/.github/.github/workflows/publish-flatpak.yml@fded0603d7e383990e8259141419fe6c1d641f41 # main
     with:
-      app-id: org.tunaos.finupdate
-      manifest-path: build-aux/org.tunaos.finupdate.json
-      repo-name: tuna-os/finupdate
+      app-id: org.tunaos.mariner
+      manifest-path: org.tunaos.mariner.json
+      repo-name: tuna-os/mariner
     secrets: inherit
 ```
 

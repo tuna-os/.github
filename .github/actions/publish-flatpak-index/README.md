@@ -79,7 +79,7 @@ index.
 ## Migration status
 
 Tracks tuna-os/tunaos#1183 (script duplication) and tuna-os/tunaos#2104
-(this race). Adopted so far: Tavern, finupdate, mariner, mandelbrot,
+(this race). Adopted so far: Tavern, mariner, mandelbrot,
 dualcut, gtk-office-suite (letters/tables/decks). Installer repos
 (tuna-installer-{cosmic,kde,niri,xfce}, bootc-installer) still carry their
 own copy of the old clone/push block — same follow-up scope #1183 already

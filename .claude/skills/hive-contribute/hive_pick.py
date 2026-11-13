@@ -39,7 +39,7 @@ SCOPED_REPOS = {
     "tuna-installer-xfce", "tuna-installer-niri", "tuna-installer-kde",
     "docs", "mandelbrot", "tuna-installer-cosmic", "tacklebox", "corral",
     "homebrew-tap", "bootc-installer-asahi", "wootc", "remora", "tromso",
-    "bootc-migrate", "finupdate", "gtk-office-suite", "suite-common",
+    "bootc-migrate", "gtk-office-suite", "suite-common",
     "xfce-linux", "bst-ci", "bluefin-cli", "protota", "flatpak-index",
     "fisherman", "dualcut", "debian-copr", "scoop-bucket", "tavern",
     "kde-build-meta", "changelog-action", "branding", "suite-common-rust",
