@@ -58,15 +58,16 @@ byte; the workflow checks that link before classifying application repos.
 
 ### Current status
 
-As verified on 2026-11-02, the workflow is **manually disabled**
+As verified on 2026-11-13, the workflow is **manually disabled**
 (`disabled_manually`); the Monday 06:00 UTC schedule in YAML is not running.
 The [last scheduled run, 2026-10-12](https://github.com/tuna-os/.github/actions/runs/38267777559),
-failed with two drifted repos: `blueshell` and `docs`. The other six configured
-repos were migrated. Both canonical and action copies currently have blob
-`564262b2473e41a049593852c7a5cee0df23d3d3`.
+failed with two drifted repos: `blueshell` and `docs`. The other configured
+repos were migrated. `blueshell` has since migrated
+([tuna-os/blueshell#85](https://github.com/tuna-os/blueshell/issues/85)), and
+the retired `finupdate` was removed from the list. Both canonical and action
+copies currently have blob `564262b2473e41a049593852c7a5cee0df23d3d3`.
 
-Re-enable the workflow once the two remaining migrations land:
-[tuna-os/blueshell#85](https://github.com/tuna-os/blueshell/issues/85) and
+Re-enable the workflow once the last remaining migration lands:
 [tuna-os/docs#448](https://github.com/tuna-os/docs/issues/448). Track migration
 progress in [#271](https://github.com/tuna-os/.github/issues/271); this dated
 snapshot documents the status requested in
@@ -75,7 +76,7 @@ snapshot documents the status requested in
 ### Coverage and limits
 
 The configured repo list is `Tavern bootc-installer blueshell docs dualcut
-finupdate gtk-office-suite mandelbrot`. For each repo's default branch, the
+gtk-office-suite mandelbrot`. For each repo's default branch, the
 workflow compares `.github/scripts/update-index.py` with canonical. Without a
 local copy, it looks for a workflow using the shared `publish-flatpak.yml`,
 `publish-flatpak-index`, or `update-flatpak-index` tooling before calling the
