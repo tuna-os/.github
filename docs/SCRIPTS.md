@@ -29,7 +29,7 @@ The established validation scripts below are dependency-free (written using Pyth
 |---|---|---|---|
 | [`check-renovate-automerge-policy.py`](#1-check-renovate-automerge-policypy) | Enforces that `renovate.json` configs never automerge major updates | `scripts/` (synced to `project-starter/scripts/`) | `renovate-policy-check.yml` |
 | [`check-workflow-permissions.py`](#2-check-workflow-permissionspy) | Enforces top-level `permissions:` blocks in all workflow files | `scripts/` (synced to `project-starter/scripts/`) | `workflow-permissions-check.yml` |
-| [`check-workflow-action-pins.py`](#3-check-workflow-action-pinspy) | Enforces that external `uses:` action references are pinned to full 40-character commit SHAs | `scripts/` | `workflow-action-pin-check.yml` |
+| [`check-workflow-action-pins.py`](#3-check-workflow-action-pinspy) | Enforces that external `uses:` action references are pinned to full 40-character commit SHAs | `scripts/` (synced to `project-starter/scripts/`) | `workflow-action-pin-check.yml` |
 | [`arch-plan.py`](#4-arch-planpy) | Validates architecture input matrix (`x86_64`, `aarch64`) for Flatpak packaging | `scripts/` | `arch-plan-check.yml` |
 | [`auto-qa-tuner.mjs`](#5-auto-qa-tunermjs) | Self-tunes QA gate threshold parameters based on workflow outcome observations | `scripts/` | `auto-qa-tuner.yml` |
 | [`roadmap-index.py`](#6-roadmap-indexpy) | Verifies and regenerates `ROADMAP-INDEX.md` inventory against live GitHub API data | `scripts/` | `roadmap-index-automation.yml` |
@@ -272,20 +272,29 @@ python3 scripts/test-roadmap-index.py
 
 ## Synchronization with `project-starter`
 
-Two validation scripts ship as byte-identical copies in `project-starter/scripts/` so that newly scaffolded repositories receive current policy enforcement gates:
+Three validation scripts ship as byte-identical copies in `project-starter/scripts/` so that newly scaffolded repositories receive current policy enforcement gates:
 
 1. `scripts/check-renovate-automerge-policy.py` ↔ `project-starter/scripts/check-renovate-automerge-policy.py`
 2. `scripts/check-workflow-permissions.py` ↔ `project-starter/scripts/check-workflow-permissions.py`
+3. `scripts/check-workflow-action-pins.py` ↔ `project-starter/scripts/check-workflow-action-pins.py`
 
 ### Why Synchronization Matters
 `project-starter/` is copied verbatim into new repositories when they are created. If a bug fix or security policy update is made to `scripts/` without updating `project-starter/scripts/`, new repositories will inherit outdated or drifting checks.
 
 ### Verifying Synchronization
-- The unit test `scripts/test-renovate-automerge-policy.py` includes an automated assertion verifying that `scripts/check-renovate-automerge-policy.py` and `project-starter/scripts/check-renovate-automerge-policy.py` are byte-identical.
+Each script's own test asserts that its two copies are byte-identical:
+
+| Copy | Assertion | Runs on a starter-only edit |
+|---|---|---|
+| `check-renovate-automerge-policy.py` | `scripts/test-renovate-automerge-policy.py` | Yes — `renovate-policy-check.yml` lists both paths |
+| `check-workflow-action-pins.py` | `scripts/test_check_workflow_action_pins.py` | Yes — `workflow-action-pin-check.yml` has no paths filter |
+| `check-workflow-permissions.py` | `scripts/test_check_workflow_permissions.py` | Not yet — `script-self-tests.yml` filters on `scripts/**` (#369) |
+
 - You can manually verify file synchronization at any time using `cmp` or `diff`:
   ```bash
   diff -u scripts/check-renovate-automerge-policy.py project-starter/scripts/check-renovate-automerge-policy.py
   diff -u scripts/check-workflow-permissions.py project-starter/scripts/check-workflow-permissions.py
+  diff -u scripts/check-workflow-action-pins.py project-starter/scripts/check-workflow-action-pins.py
   ```
 
 ---
@@ -307,8 +316,8 @@ When modifying existing validation scripts or authoring new checks, adhere to th
    - Avoid shell string interpolation (`${{ ... }}`) in workflow caller definitions; pass values via environment variables to avoid code injection vulnerabilities (see [`AGENTS.md`](../AGENTS.md)).
 
 4. **Update Both Copies Simultaneously:**
-   - Whenever editing `scripts/check-renovate-automerge-policy.py` or `scripts/check-workflow-permissions.py`, copy the updated script into `project-starter/scripts/` in the same commit.
-   - Run `python3 scripts/test-renovate-automerge-policy.py` before committing to ensure the byte-sync assertion passes.
+   - Whenever editing one of the three `scripts/check-*.py` scripts, copy the updated script into `project-starter/scripts/` in the same commit.
+   - Run that script's test before committing to ensure the byte-sync assertion passes.
 
 5. **Provide Automated Unit Tests:**
    - Pair every new or modified validation script with a corresponding unit test in `scripts/` (e.g. `scripts/test_*.py`).
