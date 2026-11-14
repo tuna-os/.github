@@ -27,6 +27,7 @@ See [`AGENTS.md`](../AGENTS.md) for the different propagation mechanisms.
   - [reusable-first-contributor](#reusable-first-contributoryml)
   - [reusable-pr-nudges](#reusable-pr-nudgesyml)
   - [reusable-add-help-wanted](#reusable-add-help-wantedyml)
+  - [reusable-release-verification](#reusable-release-verificationyml)
   - [publish-flatpak](#publish-flatpakyml)
 - [Common patterns and anti-patterns](#common-patterns-and-anti-patterns)
 - [Testing changes before merge](#testing-changes-before-merge)
@@ -48,6 +49,7 @@ Other workflows already use versioned labels managed by Renovate.
 | First Contributor Greetings | [`reusable-first-contributor.yml`](../.github/workflows/reusable-first-contributor.yml) | Greets first-time issue/PR authors | none (all optional) |
 | PR Reminders | [`reusable-pr-nudges.yml`](../.github/workflows/reusable-pr-nudges.yml) | Advisory reminders from the files a PR touches | none (all optional) |
 | Add Help Wanted Label | [`reusable-add-help-wanted.yml`](../.github/workflows/reusable-add-help-wanted.yml) | Labels unassigned issues with `help wanted` | none |
+| Release Verification | [`reusable-release-verification.yml`](../.github/workflows/reusable-release-verification.yml) | Fails unless a published release's tag, assets and checksums match a declared contract | `release-tag`, `expected-commit`, `expected-artifacts` |
 | Publish Flatpak | [`publish-flatpak.yml`](../.github/workflows/publish-flatpak.yml) | Build → GHCR → central index pipeline | `app-id`, `manifest-path`, `repo-name` (+ `FLATPAK_INDEX_DEPLOY_KEY` secret) |
 
 Inputs are grouped by responsibility below. `type` is the workflow-call input
@@ -334,6 +336,63 @@ jobs:
 **Notes.** The job needs `issues: write`. It runs with `continue-on-error` so a
 transient API failure never blocks; it is a no-op if the issue already has a
 label or an assignee.
+
+### reusable-release-verification.yml
+
+**Purpose.** Checks a release after it is published and fails closed if the
+release does not match what the caller declared. It checks that the tag
+resolves to the expected commit, that the release exists and is not a draft,
+that every declared asset is present, and that each payload's SHA-256 matches
+the entry in its checksum file. The [project-starter release
+profile](../project-starter/README.md#release-verification-profile) wires it
+into a new repository's `release.yml`.
+
+**Inputs.**
+
+| Input | Type | Required | Default | When to change it |
+|---|---|---|---|---|
+| `release-tag` | string | yes | — | The exact tag the publishing job created. |
+| `expected-commit` | string | yes | — | The full 40-character SHA the tag must resolve to, normally the publishing job's `github.sha`. Abbreviated SHAs fail. |
+| `expected-artifacts` | string | yes | — | JSON array describing each payload (see below). |
+| `repository` | string | no | the caller's repository | Only to verify a release in another repository, as `owner/name`. |
+
+`expected-artifacts` holds one object per payload. Each object has five
+fields, and each field names a release asset: `name` (the payload),
+`checksum`, `signature`, `provenance` and `sbom`. All five are required and
+must not be empty, and no asset name may appear twice in the whole array.
+The checksum file must have a `<sha256>  <name>` line for the payload (a
+`./<name>` path also matches).
+
+**Usage.** Run it as a job after the job that publishes the release:
+
+```yaml
+jobs:
+  verify-release:
+    needs: release
+    permissions:
+      contents: read
+    uses: tuna-os/.github/.github/workflows/reusable-release-verification.yml@fded0603d7e383990e8259141419fe6c1d641f41 # main
+    with:
+      release-tag: ${{ needs.release.outputs.release-tag }}
+      expected-commit: ${{ needs.release.outputs.expected-commit }}
+      expected-artifacts: ${{ needs.release.outputs.expected-artifacts }}
+```
+
+`project-starter/.github/workflows/release.yml` shows how a publishing job
+produces those outputs from `.github/release-artifacts.json`.
+
+**Notes.**
+
+- The signature, provenance and SBOM assets must exist and be non-empty, but
+  the workflow does not verify the signature or read the provenance or SBOM.
+  Add that verification separately if your release needs it.
+- It calls the GitHub API with the caller's `GITHUB_TOKEN` and needs only
+  `contents: read`. With `repository` set to another repository, that token
+  must be able to read that repository's releases.
+- The job writes a pass or fail summary, with links to each verified asset,
+  to the run's step summary.
+- `scripts/test-release-verification.py` runs the workflow's script against
+  the fixtures in `tests/fixtures/release-verification/`.
 
 ### publish-flatpak.yml
 
