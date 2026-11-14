@@ -31,7 +31,7 @@ The established validation scripts below are dependency-free (written using Pyth
 | [`check-workflow-permissions.py`](#2-check-workflow-permissionspy) | Enforces top-level `permissions:` blocks in all workflow files | `scripts/` (synced to `project-starter/scripts/`) | `workflow-permissions-check.yml` |
 | [`check-workflow-action-pins.py`](#3-check-workflow-action-pinspy) | Enforces that external `uses:` action references are pinned to full 40-character commit SHAs | `scripts/` (synced to `project-starter/scripts/`) | `workflow-action-pin-check.yml` |
 | [`arch-plan.py`](#4-arch-planpy) | Validates architecture input matrix (`x86_64`, `aarch64`) for Flatpak packaging | `scripts/` | `arch-plan-check.yml` |
-| [`auto-qa-tuner.mjs`](#5-auto-qa-tunermjs) | Self-tunes QA gate threshold parameters based on workflow outcome observations | `scripts/` | `auto-qa-tuner.yml` |
+| [`auto-qa-tuner.mjs`](#5-auto-qa-tunermjs) | Self-tunes QA gate threshold parameters based on workflow outcome observations | `scripts/` | None: run it by hand. `script-self-tests.yml` runs its tests |
 | [`roadmap-index.py`](#6-roadmap-indexpy) | Verifies and regenerates `ROADMAP-INDEX.md` inventory against live GitHub API data | `scripts/` | `roadmap-index-automation.yml` |
 | [`enrollment-report.py`](../organization/README.md) | Experimental read-only policy conformance report over local checkouts | `scripts/` | `enrollment-prototype-test.yml` (tests only) |
 
@@ -238,6 +238,9 @@ node scripts/auto-qa-tuner.mjs \
 # Run unit tests
 node scripts/test-auto-qa-tuner.mjs
 ```
+
+No workflow runs the tuner or collects its observations. CI runs only its
+tests, in the `Node self-tests` job of `script-self-tests.yml`.
 
 #### Exit Codes
 - `0` (`EXIT_STEADY`): Steady state — all gates operating normally within bounds, no changes needed.
