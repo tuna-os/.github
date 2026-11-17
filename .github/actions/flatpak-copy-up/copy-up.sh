@@ -14,6 +14,8 @@ fi
 root_opts=$(awk '$2 == "/" { print $3 "," $4 }' /proc/mounts | tr ',' '\n' |
   grep -E '^(overlay|redirect_dir|index|metacopy|xino)' | paste -sd, - || true)
 echo "Root filesystem: ${root_opts:-unknown}"
+# Without a redirect_dir mount option, the overlay module default applies.
+echo "Kernel: $(uname -r); overlay redirect_dir default: $(cat /sys/module/overlay/parameters/redirect_dir 2>/dev/null || echo unknown)"
 
 # rename(2) without the copy fallback that mv(1) has.
 # Exit 0: renamed. Exit 18: EXDEV. Exit 1: any other error.
