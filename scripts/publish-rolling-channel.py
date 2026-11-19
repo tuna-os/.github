@@ -75,27 +75,55 @@ def _emit_outputs(decision: dict) -> None:
         fh.write(f"update_index={int(decision['update_index'])}\n")
 
 
+# (key, env_vars) -- the default for each flag comes from env_vars, tried in
+# order, so a command-line value always wins. `ref` falls back through
+# REF_INPUT then github_ref (the workflow's GITHUB_REF); arch and primary each
+# through their single env var. Uniform: every flag parses identically below.
+_DEFAULTS = {
+    "ref": ("REF_INPUT", "github_ref"),
+    "arch": ("ARCH",),
+    "primary": ("PRIMARY",),
+}
+
+
+def _env_default(key: str) -> str:
+    """Return the flag's default from its env vars, or "" if none are set."""
+    for var in _DEFAULTS[key]:
+        value = os.environ.get(var)
+        if value is not None:
+            return value
+    return ""
+
+
 def main(argv=None) -> int:
     argv = list(sys.argv[1:] if argv is None else argv)
-    ref = os.environ.get("REF_INPUT", os.environ.get("github_ref", ""))
-    arch = os.environ.get("ARCH", "")
-    primary = os.environ.get("PRIMARY", "")
+
+    # Defaults come from the environment; command-line flags override them.
+    values: dict[str, str] = {key: _env_default(key) for key in _DEFAULTS}
 
     i = 0
     while i < len(argv):
         arg = argv[i]
-        if arg in ("--ref", "--ref="):
-            ref = argv[i + 1] if "=" not in arg else arg.split("=", 1)[1]
-            i += 2
-        elif arg == "--arch":
-            arch = argv[i + 1]
-            i += 2
-        elif arg == "--primary":
-            primary = argv[i + 1]
-            i += 2
+        if arg.startswith("--"):
+            body = arg[2:]
+            if "=" in body:
+                key, _, val = body.partition("=")
+                i += 1
+            else:
+                if i + 1 >= len(argv):
+                    print(f"ERROR: {arg} needs a value", file=sys.stderr)
+                    return 1
+                key, val = body, argv[i + 1]
+                i += 2
+            if key not in values:
+                print(f"ERROR: unknown argument {arg}", file=sys.stderr)
+                return 1
+            values[key] = val
         else:
             print(f"ERROR: unknown argument {arg}", file=sys.stderr)
             return 1
+
+    ref, arch, primary = values["ref"], values["arch"], values["primary"]
 
     try:
         decision = rolling_channel_writes(ref, arch, primary)

@@ -40,6 +40,7 @@ jobs:
           for test in \
             scripts/test-arch-plan.py \
             scripts/test-publish-rolling-channel.py \
+            scripts/test-publish-flatpak-rolling-guard.py \
             scripts/test-release-verification.py \
             scripts/test-renovate-automerge-policy.py \
             scripts/test-roadmap-index.py \
