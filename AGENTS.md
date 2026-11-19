@@ -115,7 +115,7 @@ python3 scripts/check-renovate-automerge-policy.py renovate.json
 
 `renovate-policy-check.yml` enforces [#12](https://github.com/tuna-os/.github/issues/12)
 against this repo's own `renovate.json`: a syntactically valid config can still
-automerge major and minor updates once `packageRules` are layered
+automerge major updates once `packageRules` are layered
 (tuna-os/tunaOS#1612, tuna-os/tunaOS#1636), which a schema validator alone would not catch.
 
 `scripts/check-renovate-automerge-policy.py` and
