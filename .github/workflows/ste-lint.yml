@@ -40,6 +40,19 @@ on:
         required: false
         type: string
         default: ubuntu-24.04
+      ratchet:
+        description: >-
+          Apply the count-ratchet rules to the budget: a count under budget
+          fails with the new number to write, and a pull request that raises
+          the budget needs the raise-label. Add labeled/unlabeled to the
+          caller's pull_request types so adding the label re-runs the check.
+        required: false
+        type: boolean
+        default: false
+      raise-label:
+        required: false
+        type: string
+        default: ratchet-raise
       checkout-ref:
         description: Ref to check out. Empty means the ref that triggered the caller.
         required: false
@@ -72,3 +85,5 @@ jobs:
           # github.base_ref is set on pull_request events and empty otherwise;
           # empty disables the advisory report and leaves the budget gate.
           base-ref: ${{ github.base_ref }}
+          ratchet: ${{ inputs.ratchet }}
+          raise-label: ${{ inputs.raise-label }}

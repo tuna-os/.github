@@ -47,7 +47,8 @@ jobs:
             .github/scripts/test_ci_contract.py \
             .github/scripts/test_fork_safety.py \
             .github/scripts/test_workflow_introspector.py \
-            .github/actions/update-flatpak-index/test_update_index.py
+            .github/actions/update-flatpak-index/test_update_index.py \
+            .github/actions/count-ratchet/test_ratchet.py
           do
             python3 "$test"
           done

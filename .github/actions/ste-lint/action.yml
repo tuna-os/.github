@@ -44,6 +44,19 @@ inputs:
       inline on the PR. The gate still decides pass/fail; hints never do.
     required: false
     default: "true"
+  ratchet:
+    description: >-
+      Apply the count-ratchet rules to the budget file: fail when the count is
+      under the budget (the error names the new number, so slack cannot build
+      up), and fail a pull request that raises the budget against base-ref
+      unless it has the raise-label. Off by default; opt in per repo. Needs a
+      budget-file (not the budget input) and base-ref for the raise check.
+    required: false
+    default: "false"
+  raise-label:
+    description: Pull request label that allows the budget to go up (ratchet mode).
+    required: false
+    default: ratchet-raise
 
 runs:
   using: composite
@@ -103,3 +116,27 @@ runs:
           if [ "$ANNOTATIONS" = "true" ]; then flags+=(--annotations); fi
           node "$GITHUB_ACTION_PATH/ste-lint.mjs" "${flags[@]}"
         fi
+
+    - name: STE ratchet
+      if: inputs.ratchet == 'true'
+      shell: bash
+      env:
+        BUDGET_FILE: ${{ inputs.budget-file }}
+        BASE_REF: ${{ inputs.base-ref }}
+        RATCHET_RAISE_LABEL: ${{ inputs.raise-label }}
+        RATCHET_LABELS: ${{ toJSON(github.event.pull_request.labels.*.name) }}
+      # The gate above already failed on count > budget. This step adds the
+      # other two count-ratchet rules -- slack fails, raises need the label --
+      # using the same checker as .github/actions/count-ratchet, so the rules
+      # cannot drift between the two actions.
+      run: |
+        set -euo pipefail
+        if [ ! -f "$BUDGET_FILE" ]; then
+          echo "::error::ratchet mode needs $BUDGET_FILE; seed it with the current count"
+          exit 1
+        fi
+        count=$(node "$GITHUB_ACTION_PATH/ste-lint.mjs" --format json 2>/dev/null \
+          | python3 -c 'import json, sys; print(len(json.load(sys.stdin)))')
+        python3 "$GITHUB_ACTION_PATH/../count-ratchet/ratchet.py" number \
+          --name ste --count "$count" --budget-file "$BUDGET_FILE" \
+          --base-ref "$BASE_REF" --title "STE ratchet ($BUDGET_FILE)"
