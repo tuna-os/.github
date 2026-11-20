@@ -88,7 +88,10 @@ says what to fix, where:
 
 - On failure, the full detail follows the verdict: `file:line`, rule number,
   what is wrong, and — where the rule names one — the approved replacement.
-  Reproduce it locally with `just ste`.
+  To reproduce it, clone tuna-os/.github next to the repository you check.
+  Then, from the root of that repository, run
+  `node ../.github/.github/actions/ste-lint/ste-lint.mjs --summary`.
+  Some repositories also have a `just ste` recipe.
 - On pull requests, an advisory section reports only what the branch itself
   introduced, as `::warning` annotations that render inline on the PR's Files
   tab. It never decides pass/fail; the budget gate does.
