@@ -487,7 +487,7 @@ exception. Two complementary strategies:
 wrappers; verify the thing they actually run before touching the `uses:` line.
 
 - `ste-lint`: run the linter from a checkout of this repo —
-  `node .github/actions/ste-lint/ste-lint.mjs --summary`, or `just ste`. For
+  `node .github/actions/ste-lint/ste-lint.mjs --summary`. For
   per-PR detail: `node .github/actions/ste-lint/ste-lint.mjs --changed-only
   --base origin/main --format json`.
 - `reusable-lint`: run the same tools locally (shellcheck, yamllint, jq,
