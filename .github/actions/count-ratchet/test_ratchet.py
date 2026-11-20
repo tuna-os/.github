@@ -193,6 +193,18 @@ class RuleTests(unittest.TestCase):
         code, out = self.check(2)
         self.assertEqual(code, 0, out)
 
+    def test_config_file_is_not_counted(self):
+        # The description matches the pattern; the file must still not count.
+        self.repo.write(".ratchet.toml", """\
+            [metrics.todo]
+            description = "TODO markers"
+            pattern = 'TODO'
+            budget = 1
+        """)
+        self.repo.write("a.txt", "TODO\n")
+        code, out = self.repo.run("check")
+        self.assertEqual(code, 0, out)
+
     def test_tighten_rewrites_only_the_budget(self):
         self.repo.write(".ratchet.toml", CONFIG.format(budget=9) + "# trailing comment\n")
         code, _ = self.repo.run("tighten")

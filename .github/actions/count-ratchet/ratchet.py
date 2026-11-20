@@ -449,7 +449,8 @@ def cmd_check(args) -> int:
         if base_text is not None:
             base_budgets = budgets_of(base_text, f"origin/{args.base_ref}:{args.config}")
             removed = sorted(set(base_budgets) - set(parse_config(text, args.config)))
-    files = tracked_files(root)
+    # The budget file names the patterns it counts; never count it.
+    files = [f for f in tracked_files(root) if f != Path(args.config).as_posix()]
     rust_tests = rust_test_files(root, files) if any(m.exclude_rust_tests for m in metrics.values()) else set()
     results = []
     for m in metrics.values():
@@ -474,7 +475,7 @@ def cmd_tighten(args) -> int:
     cfg_path = root / args.config
     text = cfg_path.read_text(encoding="utf-8")
     metrics = parse_config(text, args.config)
-    files = tracked_files(root)
+    files = [f for f in tracked_files(root) if f != Path(args.config).as_posix()]
     rust_tests = rust_test_files(root, files) if any(m.exclude_rust_tests for m in metrics.values()) else set()
     for m in metrics.values():
         if m.pattern is not None:
