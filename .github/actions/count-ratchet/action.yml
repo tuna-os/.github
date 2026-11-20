@@ -1,0 +1,61 @@
+name: "Count ratchet"
+description: >-
+  Holds counted metrics (unwrap calls, lint suppressions, skipped tests,
+  undated advisory ignores, anything a regex or a command can count) at a
+  budget that only goes down. Fails when a count is over its budget, when a
+  count is under its budget (the error names the exact new budget, so slack
+  cannot build up), and when a pull request raises a budget against the base
+  branch without the raise label. Writes a job-summary table. The checker is
+  a standard-library Python script that travels with the action.
+
+inputs:
+  config:
+    description: Budget file, relative to the workspace. See README.md for the format.
+    required: false
+    default: .ratchet.toml
+  raise-label:
+    description: >-
+      Pull request label that allows a budget to go up (or a metric to be
+      removed). Add pull_request types labeled/unlabeled to the caller's
+      trigger so adding the label re-runs the check.
+    required: false
+    default: ratchet-raise
+  base-ref:
+    description: >-
+      Base branch for the raise check. Defaults to the pull request's base;
+      empty on push and merge_group events, where the raise check is skipped
+      (the pull request already passed it).
+    required: false
+    default: ""
+  python:
+    description: Python interpreter, 3.11 or later.
+    required: false
+    default: python3
+  only:
+    description: Space-separated metric names to check. Empty checks all.
+    required: false
+    default: ""
+
+runs:
+  using: composite
+  steps:
+    - name: Count ratchet
+      shell: bash
+      env:
+        RATCHET_CONFIG: ${{ inputs.config }}
+        RATCHET_RAISE_LABEL: ${{ inputs.raise-label }}
+        RATCHET_BASE_INPUT: ${{ inputs.base-ref }}
+        RATCHET_PR_BASE: ${{ github.base_ref }}
+        RATCHET_LABELS: ${{ toJSON(github.event.pull_request.labels.*.name) }}
+        RATCHET_PYTHON: ${{ inputs.python }}
+        RATCHET_ONLY: ${{ inputs.only }}
+        RATCHET_ACTION_PATH: ${{ github.action_path }}
+      run: |
+        set -euo pipefail
+        base="${RATCHET_BASE_INPUT:-$RATCHET_PR_BASE}"
+        args=(check --config "$RATCHET_CONFIG" --base-ref "$base")
+        if [ -n "$RATCHET_ONLY" ]; then
+          read -ra only <<<"$RATCHET_ONLY"
+          args+=(--only "${only[@]}")
+        fi
+        "$RATCHET_PYTHON" "$RATCHET_ACTION_PATH/ratchet.py" "${args[@]}"

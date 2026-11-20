@@ -33,6 +33,31 @@ node .github/actions/ste-lint/ste-lint.mjs --summary   # from a checkout of tuna
 
 Take the total, commit it as `.ste-budget`, then ratchet.
 
+### Ratchet mode
+
+Set `ratchet: true` on the reusable workflow, or on the action, to enforce
+the budget in both directions. This uses the same rules as
+[`count-ratchet`](../count-ratchet/):
+
+- A count under the budget fails. The error gives the number to write in
+  `.ste-budget`, so the improvement stays.
+- A pull request that raises `.ste-budget` against its base fails, unless it
+  has the `ratchet-raise` label.
+
+```yaml
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, labeled, unlabeled]
+jobs:
+  ste:
+    uses: tuna-os/.github/.github/workflows/ste-lint.yml@<reviewed-main-sha> # main
+    with:
+      ratchet: true
+```
+
+Ratchet mode is off by default, because many repos still have slack in
+their budget. Lower the budget to the current count, then set the flag.
+
 ## What it checks by default
 
 `docs/` and `blog/` if present, plus `README.md`, `CONTRIBUTING.md`,

@@ -25,6 +25,7 @@ Cross-repository callers pin a complete commit SHA and keep it current through R
 | **Arch Plan** | [`.github/actions/arch-plan`](arch-plan/) | Validates and normalizes target architectures (`x86_64`, `aarch64`) for Flatpak builds, emitting execution plans, runner maps, and primary tags. | — |
 | **CI Contract Check** | [`.github/actions/ci-contract-check`](ci-contract-check/) | Verifies that all criteria declared in `green-criteria.yml` are asserted by reachable workflow jobs or steps. | — |
 | **Flatpak Copy-Up** | [`.github/actions/flatpak-copy-up`](flatpak-copy-up/) | Copies the Flatpak installations of a container image into the writable layer when overlayfs cannot rename image-layer directories (EXDEV). | — |
+| **Count Ratchet** | [`.github/actions/count-ratchet`](count-ratchet/) | Holds regex- or command-counted metrics at a budget that only goes down: fails over budget, fails on slack with the exact new budget, and blocks pull requests that raise a budget without the `ratchet-raise` label. | [README](count-ratchet/README.md) |
 | **Fork Safety Check** | [`.github/actions/fork-safety-check`](fork-safety-check/) | Verifies that `pull_request` workflows declare permissions, avoid unsafe triggers (`pull_request_target`), and protect write steps. | — |
 | **Publish Flatpak OCI Index** | [`.github/actions/publish-flatpak-index`](publish-flatpak-index/) | Wraps `update-flatpak-index` with clone, commit, and push-with-retry against `tuna-os/docs` to avoid concurrency races among publishers. | [README](publish-flatpak-index/README.md) |
 | **Simplified Technical English Lint** | [`.github/actions/ste-lint`](ste-lint/) | Lints Markdown prose against ASD-STE100 rules using a configurable per-repository budget and advisory PR annotations. | [README](ste-lint/README.md) |
@@ -127,6 +128,8 @@ Cross-repository callers pin a complete commit SHA and keep it current through R
   - `run-tests` *(optional, default: `"true"`)*: Whether to run internal STE lint unit tests first.
   - `base-ref` *(optional, default: `""`)*: Git base ref for advisory diff comparison.
   - `annotations` *(optional, default: `"true"`)*: Emit GitHub Actions warning annotations.
+  - `ratchet` *(optional, default: `"false"`)*: Apply the count-ratchet rules: a count under budget fails, and a raise against `base-ref` needs `raise-label`.
+  - `raise-label` *(optional, default: `ratchet-raise`)*: Label that allows the budget to go up in ratchet mode.
 - **Usage:**
   ```yaml
   - name: Lint English prose
@@ -171,4 +174,25 @@ Cross-repository callers pin a complete commit SHA and keep it current through R
   - name: Make the image's Flatpak installations updatable
     uses: tuna-os/.github/.github/actions/flatpak-copy-up@<reviewed-main-sha> # main
   - uses: flatpak/flatpak-github-actions/flatpak-builder@v6.8
+  ```
+
+---
+
+### 8. `count-ratchet`
+- **Location:** [`.github/actions/count-ratchet/action.yml`](count-ratchet/action.yml)
+- **Documentation:** [`.github/actions/count-ratchet/README.md`](count-ratchet/README.md)
+- **Description:** Counts each metric in `.ratchet.toml` (a regex over tracked files with include/exclude globs, or a command that prints a count) and compares it with its budget. Fails when a count is over budget, when a count is under budget (naming the exact new budget), and when a pull request raises a budget or removes a metric against the base branch without the raise label. Writes a job-summary table. `checks/deny_review_dates.py` counts cargo-deny ignores without a dated reason.
+- **Inputs:**
+  - `config` *(optional, default: `.ratchet.toml`)*: Budget file.
+  - `raise-label` *(optional, default: `ratchet-raise`)*: Label that allows a budget to go up.
+  - `base-ref` *(optional, default: the pull request base)*: Branch for the raise check.
+  - `python` *(optional, default: `python3`)*: Interpreter, 3.11 or later.
+  - `only` *(optional, default: `""`)*: Space-separated metric names to check.
+- **Usage:**
+  ```yaml
+  - uses: actions/checkout@v7.0.1
+    with:
+      persist-credentials: false
+      fetch-depth: 0
+  - uses: tuna-os/.github/.github/actions/count-ratchet@<reviewed-main-sha> # main
   ```
