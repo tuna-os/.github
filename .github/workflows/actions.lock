@@ -52,7 +52,7 @@ workflows:
         - 'actions/checkout@v7.0.1'
     '.github/workflows/ste-lint.yml':
         - 'actions/checkout@v7.0.1'
-        - 'tuna-os/.github@main'
+        - 'actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1'
     '.github/workflows/workflow-action-pin-check.yml':
         - 'actions/checkout@v7.0.1'
         - 'actions/setup-python@v7.1.0'

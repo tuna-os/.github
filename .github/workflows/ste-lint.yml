@@ -76,7 +76,12 @@ jobs:
           # diff against, and the report would degrade to whole-repo noise.
           fetch-depth: 0
 
-      - uses: tuna-os/.github/.github/actions/ste-lint@main
+      # `$/` is this repository at the commit the caller pinned, so the action
+      # always matches the workflow revision. `tuna-os/.github/...@main` was
+      # resolved through this repo's actions.lock instead, which held @main at
+      # an older commit: callers on a newer workflow pin got an action that
+      # did not know its newer inputs (`ratchet`).
+      - uses: $/.github/actions/ste-lint
         with:
           budget-file: ${{ inputs.budget-file }}
           budget: ${{ inputs.budget }}
