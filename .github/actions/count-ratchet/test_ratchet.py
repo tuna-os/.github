@@ -187,6 +187,12 @@ class RuleTests(unittest.TestCase):
         code, out = self.check(3)
         self.assertEqual(code, 0, out)
 
+    def test_cfg_all_test_module_is_stripped(self):
+        self.repo.write("src/unix.rs", "fn u() {}\n#[cfg(all(test, unix))]\nmod tests { fn t() { a.unwrap(); } }\n")
+        self.base(2)
+        code, out = self.check(2)
+        self.assertEqual(code, 0, out)
+
     def test_tighten_rewrites_only_the_budget(self):
         self.repo.write(".ratchet.toml", CONFIG.format(budget=9) + "# trailing comment\n")
         code, _ = self.repo.run("tighten")

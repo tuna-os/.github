@@ -35,11 +35,11 @@ import tomllib
 
 DEFAULT_CONFIG = ".ratchet.toml"
 DEFAULT_LABEL = "ratchet-raise"
-# Python's re has no inline way to say "test module starts here", so this is
-# the one Rust-aware rule: everything from `#[cfg(test)] mod` to the end of the
-# file is test code. It matches the house layout (tests at the bottom).
+# The one Rust-aware rule: everything from `#[cfg(test)] mod x {` (or
+# `#[cfg(all(test, ...))]`) to the end of the file is test code. It matches the
+# house layout (tests at the bottom).
 RUST_TEST_MOD = re.compile(
-    r"#\[cfg\(test\)\]\s*\n(?:\s*(?:#\[[^\n]*\]|//[^\n]*)\s*\n)*\s*"
+    r"#\[cfg\((?:test|all\([^)\n]*\btest\b[^)\n]*\))\)\]\s*\n(?:\s*(?:#\[[^\n]*\]|//[^\n]*)\s*\n)*\s*"
     r"(?:pub(?:\([^)]*\))?\s+)?mod\s+(\w+)\s*([;{])"
 )
 METRIC_KEYS = {
