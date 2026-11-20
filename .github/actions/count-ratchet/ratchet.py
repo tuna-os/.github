@@ -39,8 +39,12 @@ DEFAULT_LABEL = "ratchet-raise"
 # `#[cfg(all(test, ...))]`) to the end of the file is test code. It matches the
 # house layout (tests at the bottom).
 RUST_TEST_MOD = re.compile(
-    r"#\[cfg\((?:test|all\([^)\n]*\btest\b[^)\n]*\))\)\]\s*\n(?:\s*(?:#\[[^\n]*\]|//[^\n]*)\s*\n)*\s*"
-    r"(?:pub(?:\([^)]*\))?\s+)?mod\s+(\w+)\s*([;{])"
+    # Each repetition consumes exactly one line (blank, attribute or comment),
+    # and is possessive, so a long run of commented-out code cannot backtrack
+    # exponentially.
+    r"#\[cfg\((?:test|all\([^)\n]*\btest\b[^)\n]*\))\)\][ \t]*\r?\n"
+    r"(?:[ \t]*+(?:#\[[^\n]*|//[^\n]*)?\r?\n)*+"
+    r"[ \t]*(?:pub(?:\([^)\n]*\))?[ \t]+)?mod[ \t]+(\w+)[ \t]*([;{])"
 )
 METRIC_KEYS = {
     "description", "pattern", "command", "include", "exclude",
