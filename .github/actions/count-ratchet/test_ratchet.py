@@ -175,6 +175,85 @@ class RuleTests(unittest.TestCase):
         self.assertEqual(code, 1)
         self.assertIn("unwrap: metric removed", out)
 
+    # A pull request that adds a counted call and edits what the metric
+    # counts, so the count and the budget both stay at the base value.
+    def redefine(self, old, new, labels="[]", base_ref="main", event="pull_request"):
+        self.base(2)
+        self.repo.write("src/more.rs", "fn b() { a.unwrap(); }\n")
+        text = CONFIG.format(budget=2)
+        self.assertIn(old, text)
+        self.repo.write(".ratchet.toml", text.replace(old, new))
+        return self.repo.run("check", "--base-ref", base_ref, "--labels", labels,
+                             env={"GITHUB_EVENT_NAME": event})
+
+    def test_excluding_the_new_code_needs_the_label(self):
+        code, out = self.redefine(
+            'include = ["**/*.rs"]',
+            'include = ["**/*.rs"]\nexclude = ["src/more.rs", "**/tests/**", "**/*_test.rs"]',
+        )
+        self.assertEqual(code, 1, out)
+        self.assertIn("unwrap: what the metric counts changed", out)
+        self.assertIn("redefined", out)
+
+    def test_excluding_the_new_code_in_defaults_needs_the_label(self):
+        code, out = self.redefine('exclude = ["**/tests/**", "**/*_test.rs"]',
+                                  'exclude = ["**/tests/**", "**/*_test.rs", "src/more.rs"]')
+        self.assertEqual(code, 1, out)
+        self.assertIn("unwrap: what the metric counts changed", out)
+
+    def test_narrowing_the_include_needs_the_label(self):
+        code, out = self.redefine('include = ["**/*.rs"]', 'include = ["src/lib.rs"]')
+        self.assertEqual(code, 1, out)
+        self.assertIn("unwrap: what the metric counts changed", out)
+
+    def test_new_pattern_needs_the_label(self):
+        code, out = self.redefine("pattern = '\\.unwrap\\(\\)'",
+                                  "pattern = '\\.unwrap\\(\\);\\s*y'")
+        self.assertEqual(code, 1, out)
+        self.assertIn("unwrap: what the metric counts changed", out)
+
+    def test_pattern_replaced_by_command_needs_the_label(self):
+        self.base(2)
+        self.repo.write("src/more.rs", "fn b() { a.unwrap(); }\n")
+        self.repo.write(".ratchet.toml", """\
+            [metrics.unwrap]
+            command = 'echo 2'
+            budget = 2
+        """)
+        code, out = self.repo.run("check", "--base-ref", "main", "--labels", "[]")
+        self.assertEqual(code, 1, out)
+        self.assertIn("unwrap: what the metric counts changed", out)
+
+    def test_redefinition_with_label_passes(self):
+        code, out = self.redefine('include = ["**/*.rs"]', 'include = ["src/lib.rs"]',
+                                  labels='["ratchet-raise"]')
+        self.assertEqual(code, 0, out)
+        self.assertIn("redefined (label)", out)
+
+    def test_redefinition_is_not_checked_on_push(self):
+        code, out = self.redefine('include = ["**/*.rs"]', 'include = ["src/lib.rs"]',
+                                  base_ref="", event="push")
+        self.assertEqual(code, 0, out)
+
+    def test_same_definition_written_another_way_passes(self):
+        # A new description, a reordered glob list and a default copied into
+        # the metric count the same files.
+        self.base(2)
+        self.repo.write(".ratchet.toml", """\
+            [defaults]
+            exclude = ["**/*_test.rs", "**/tests/**"]
+
+            [metrics.unwrap]
+            description = "reworded"
+            pattern = '\\.unwrap\\(\\)'
+            include = ["**/*.rs"]
+            exclude = ["**/tests/**", "**/*_test.rs"]
+            exclude-rust-tests = true
+            budget = 2
+        """)
+        code, out = self.repo.run("check", "--base-ref", "main", "--labels", "[]")
+        self.assertEqual(code, 0, out)
+
     def test_new_config_without_base_passes(self):
         self.repo.commit_as_base()
         code, out = self.check(2)

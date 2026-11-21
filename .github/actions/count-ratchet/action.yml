@@ -4,9 +4,10 @@ description: >-
   undated advisory ignores, anything a regex or a command can count) at a
   budget that only goes down. Fails when a count is over its budget, when a
   count is under its budget (the error names the exact new budget, so slack
-  cannot build up), and when a pull request raises a budget against the base
-  branch without the raise label. Writes a job-summary table. The checker is
-  a standard-library Python script that travels with the action.
+  cannot build up), and when a pull request raises a budget or changes what a
+  metric counts against the base branch without the raise label. Writes a
+  job-summary table. The checker is a standard-library Python script that
+  travels with the action.
 
 inputs:
   config:
@@ -16,7 +17,7 @@ inputs:
   raise-label:
     description: >-
       Pull request label that allows a budget to go up (or a metric to be
-      removed). Add pull_request types labeled/unlabeled to the caller's
+      removed, or to change what it counts). Add pull_request types labeled/unlabeled to the caller's
       trigger so adding the label re-runs the check.
     required: false
     default: ratchet-raise

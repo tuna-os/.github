@@ -181,10 +181,10 @@ Cross-repository callers pin a complete commit SHA and keep it current through R
 ### 8. `count-ratchet`
 - **Location:** [`.github/actions/count-ratchet/action.yml`](count-ratchet/action.yml)
 - **Documentation:** [`.github/actions/count-ratchet/README.md`](count-ratchet/README.md)
-- **Description:** Counts each metric in `.ratchet.toml` (a regex over tracked files with include/exclude globs, or a command that prints a count) and compares it with its budget. Fails when a count is over budget, when a count is under budget (naming the exact new budget), and when a pull request raises a budget or removes a metric against the base branch without the raise label. Writes a job-summary table. `checks/deny_review_dates.py` counts cargo-deny ignores without a dated reason.
+- **Description:** Counts each metric in `.ratchet.toml` (a regex over tracked files with include/exclude globs, or a command that prints a count) and compares it with its budget. Fails when a count is over budget, when a count is under budget (naming the exact new budget), and when a pull request raises a budget, removes a metric or changes what a metric counts against the base branch without the raise label. Writes a job-summary table. `checks/deny_review_dates.py` counts cargo-deny ignores without a dated reason.
 - **Inputs:**
   - `config` *(optional, default: `.ratchet.toml`)*: Budget file.
-  - `raise-label` *(optional, default: `ratchet-raise`)*: Label that allows a budget to go up.
+  - `raise-label` *(optional, default: `ratchet-raise`)*: Label that allows a budget to go up, or a metric to change what it counts.
   - `base-ref` *(optional, default: the pull request base)*: Branch for the raise check.
   - `python` *(optional, default: `python3`)*: Interpreter, 3.11 or later.
   - `only` *(optional, default: `""`)*: Space-separated metric names to check.
