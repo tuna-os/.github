@@ -13,6 +13,8 @@ The rules, for every metric:
   count < budget          fail: slack. The error names the exact new budget.
   budget > base budget    fail on a pull request, unless it has the raise label.
   metric deleted          treated as a raise.
+  definition changed      treated as a raise: a new pattern, command or glob
+                          list can stop counting what the change adds.
 
 Standard library only (tomllib needs Python 3.11 or later).
 """
@@ -51,6 +53,9 @@ METRIC_KEYS = {
     "exclude-rust-tests", "budget",
 }
 DEFAULT_KEYS = {"include", "exclude", "exclude-rust-tests"}
+# What a metric counts. A pull request that changes one of these can make
+# additions invisible while the budget stays where it is.
+DEFINITION_KEYS = ("pattern", "command", "include", "exclude", "exclude-rust-tests")
 
 
 class ConfigError(Exception):
@@ -180,6 +185,38 @@ def budgets_of(text: str, source: str) -> dict[str, int]:
     }
 
 
+def definitions_of(text: str) -> dict[str, dict]:
+    """What each metric counts, with [defaults] applied.
+
+    Tolerant like budgets_of: the base branch's config may be older than this
+    checker, so nothing here is validated. Glob lists compare as sets, and a
+    command metric ignores the glob keys, as counting does.
+    """
+    data = tomllib.loads(text)
+    defaults = data.get("defaults", {})
+    if not isinstance(defaults, dict):
+        defaults = {}
+
+    def globs(value):
+        return sorted({str(g) for g in value}) if isinstance(value, list) else [str(value)]
+
+    out = {}
+    for name, raw in data.get("metrics", {}).items():
+        if not isinstance(raw, dict):
+            continue
+        merged = {**defaults, **raw}
+        if "command" in merged:
+            out[name] = {"command": merged["command"]}
+        else:
+            out[name] = {
+                "pattern": merged.get("pattern"),
+                "include": globs(merged.get("include", ["**"])),
+                "exclude": globs(merged.get("exclude", [])),
+                "exclude-rust-tests": bool(merged.get("exclude-rust-tests", False)),
+            }
+    return out
+
+
 # --------------------------------------------------------------------------
 # Counting
 
@@ -287,6 +324,7 @@ class Result:
     base_budget: int | None
     per_file: dict
     problems: list = field(default_factory=list)
+    redefined: bool = False
 
 
 def judge(results, base_budgets, removed, is_pr, labels, raise_label, edit_hint):
@@ -315,6 +353,17 @@ def judge(results, base_budgets, removed, is_pr, labels, raise_label, edit_hint)
                     f"{r.name}: budget raised {r.base_budget} -> {r.budget} versus the base branch. "
                     f"Raising a budget needs the '{raise_label}' label on the pull request."
                 )
+        if is_pr and r.redefined:
+            if raise_ok:
+                r.problems.append("redefined (label)")
+            else:
+                r.problems.append("redefined")
+                failures.append(
+                    f"{r.name}: what the metric counts changed versus the base branch "
+                    f"({', '.join(DEFINITION_KEYS)}). A new definition can stop counting what "
+                    f"this change adds, so it is a raise; it needs the '{raise_label}' label "
+                    f"on the pull request."
+                )
     for name in removed:
         if is_pr and not raise_ok:
             failures.append(
@@ -335,7 +384,8 @@ def summary_table(results, removed, title):
         delta = r.count - r.budget
         base = "-" if r.base_budget is None else str(r.base_budget)
         status = ", ".join(r.problems) if r.problems else "ok"
-        mark = "x" if any(p in ("over", "slack", "raised") for p in r.problems) else "ok"
+        failing = ("over", "slack", "raised", "redefined")
+        mark = "x" if any(p in failing for p in r.problems) else "ok"
         rows.append(
             f"| `{r.name}` | {r.count} | {r.budget} | {base} | {delta:+d} | "
             f"{':x:' if mark == 'x' else ':white_check_mark:'} {status} |"
@@ -443,12 +493,14 @@ def cmd_check(args) -> int:
     if args.only:
         metrics = {k: v for k, v in metrics.items() if k in args.only}
     is_pr, labels = common_context(args)
-    base_budgets, removed = {}, []
+    base_budgets, base_defs, removed = {}, {}, []
     if is_pr:
         base_text = base_file(root, args.base_ref, args.config)
         if base_text is not None:
             base_budgets = budgets_of(base_text, f"origin/{args.base_ref}:{args.config}")
+            base_defs = definitions_of(base_text)
             removed = sorted(set(base_budgets) - set(parse_config(text, args.config)))
+    head_defs = definitions_of(text)
     # The budget file names the patterns it counts; never count it.
     files = [f for f in tracked_files(root) if f != Path(args.config).as_posix()]
     rust_tests = rust_test_files(root, files) if any(m.exclude_rust_tests for m in metrics.values()) else set()
@@ -458,7 +510,9 @@ def cmd_check(args) -> int:
             count, per_file = count_pattern(m, root, files, rust_tests)
         else:
             count, per_file = count_command(m, root, args.action_path)
-        results.append(Result(m.name, count, m.budget, base_budgets.get(m.name), per_file))
+        redefined = m.name in base_budgets and base_defs.get(m.name) != head_defs.get(m.name)
+        results.append(Result(m.name, count, m.budget, base_budgets.get(m.name), per_file,
+                              redefined=redefined))
     if args.json:
         print(json.dumps({r.name: r.count for r in results}))
         return 0

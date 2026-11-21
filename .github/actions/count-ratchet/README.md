@@ -14,9 +14,18 @@ For each metric, the check fails when:
 | count < budget | Slack. The error gives the exact new budget. Write it in the same pull request. |
 | budget > base-branch budget | A pull request raises the budget. This needs the `ratchet-raise` label. |
 | metric removed | The check treats removal as a raise. |
+| definition changed | The check treats a new `pattern`, `command`, `include`, `exclude` or `exclude-rust-tests` as a raise. The new value can stop the count of what the pull request adds. |
 
 The raise check runs on `pull_request` events only. On `push` and
 `merge_group` events, the pull request has already passed it.
+
+The definition check compares the values after `[defaults]` apply, so an
+edit to `[defaults]` is a change to each metric that uses the default. A new
+`description` and a new order in a glob list are not changes.
+
+The raise check has two limits. It does not see an edit to a script that a
+`command` metric runs. It does not see code that moves into a path that an
+`exclude` glob already matches. Review such changes by hand.
 
 Slack fails because a budget with room in it is a budget that nobody holds.
 The fix is one edit, and the error states it:
@@ -55,7 +64,7 @@ The action needs Python 3.11 or later on the runner, and no packages. The
 | Input | Default | Meaning |
 |---|---|---|
 | `config` | `.ratchet.toml` | The budget file. |
-| `raise-label` | `ratchet-raise` | The label that lets a budget go up. |
+| `raise-label` | `ratchet-raise` | The label that lets a budget go up, or a metric change what it counts. |
 | `base-ref` | the pull request base | The branch for the raise check. |
 | `python` | `python3` | The interpreter. |
 | `only` | empty | Space-separated metric names. Empty checks all metrics. |
