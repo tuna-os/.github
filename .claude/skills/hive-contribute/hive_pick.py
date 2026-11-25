@@ -40,7 +40,7 @@ SCOPED_REPOS = {
     "docs", "mandelbrot", "tuna-installer-cosmic", "tacklebox", "corral",
     "homebrew-tap", "bootc-installer-asahi", "wootc", "remora", "tromso",
     "bootc-migrate", "gtk-office-suite", "suite-common",
-    "xfce-linux", "bst-ci", "bluefin-cli", "protota", "flatpak-index",
+    "brussels", "bst-ci", "bluefin-cli", "protota", "flatpak-index",
     "fisherman", "dualcut", "debian-copr", "scoop-bucket", "tavern",
     "kde-build-meta", "changelog-action", "branding", "suite-common-rust",
     "mariner", ".github",
