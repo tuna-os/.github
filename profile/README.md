@@ -82,7 +82,7 @@ Release plumbing ships alongside: [homebrew-tap](https://github.com/tuna-os/home
 
 ## Desktops built from source
 
-[Tromsø](https://github.com/tuna-os/tromso) (KDE) and [XFCE Linux](https://github.com/tuna-os/xfce-linux) are built from source with [BuildStream](https://buildstream.build) on freedesktop-sdk, rather than assembled from prebuilt packages — the same approach as GNOME OS and Project Bluefin's Dakota.
+[Tromsø](https://github.com/tuna-os/tromso) (KDE) and [Brussels](https://github.com/tuna-os/brussels) (XFCE) are built from source with [BuildStream](https://buildstream.build) on freedesktop-sdk, rather than assembled from prebuilt packages — the same approach as GNOME OS and Project Bluefin's Dakota.
 
 ## Prototypes and specs
 

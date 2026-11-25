@@ -45,6 +45,6 @@ body:
         - Skipjack (CentOS Stream 10)
         - Bonito (Fedora)
         - Tromsø (KDE)
-        - XFCE Linux
+        - Brussels (XFCE)
     validations:
       required: false
