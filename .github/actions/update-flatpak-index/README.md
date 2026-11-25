@@ -27,6 +27,14 @@ the existing per-repo loop pattern) — `update-index.py` only ever replaces
 the entry for the architecture it was given, leaving other arches in the
 index untouched.
 
+Each word of `tags` must match the OCI tag grammar
+(`^[A-Za-z0-9_][A-Za-z0-9._-]{0,127}$`); anything else fails the step.
+`run-update-index.sh` holds that check and builds the `update-index.py`
+call. This action and `publish-flatpak-index` both run it, so neither can
+pass a word such as `--repo-name` through to argparse, which would let it
+override an earlier argument. Keep the check there: `update-index.py` must
+stay byte-identical to its canonical copy.
+
 ## Migration status
 
 This action was added as the first step of the tunaos#1183 consolidation
