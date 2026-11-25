@@ -325,55 +325,60 @@ class PublishFlatpakIndexActionTests(unittest.TestCase):
             ["git", *args], cwd=cwd, env=env, capture_output=True, text=True, check=True
         ).stdout
 
-    def test_index_commit_names_its_source_run(self):
+    def run_publish(self, root, tags):
+        """Run the action's script with TAGS=tags; return (result, env, docs_repo)."""
         import yaml  # update-index.py itself needs only the standard library
 
         action = yaml.safe_load(self.ACTION.read_text(encoding="utf-8"))
         script = action["runs"]["steps"][0]["run"]
-        with tempfile.TemporaryDirectory() as temp_dir:
-            root = Path(temp_dir)
-            oci_dir, _ = UpdateIndexTests.write_oci_layout(self, root)
-            docs_repo = root / "docs.git"
-            env = {
-                "PATH": os.environ["PATH"],
-                "HOME": str(root),
-                "GIT_CONFIG_NOSYSTEM": "1",
-                # Serve the docs-repo remote from a local bare repository.
-                "GIT_CONFIG_COUNT": "1",
-                "GIT_CONFIG_KEY_0": f"url.{docs_repo.as_uri()}.insteadOf",
-                "GIT_CONFIG_VALUE_0": self.REMOTE,
-            }
-            self.git(env, "init", "-q", "--bare", "-b", "main", str(docs_repo))
-            seed = root / "seed"
-            self.git(env, "clone", "-q", self.REMOTE, str(seed))
-            (seed / "static" / "flatpak" / "index").mkdir(parents=True)
-            (seed / "static" / "flatpak" / "index" / "static").write_text("{}\n")
-            self.git(env, "add", "-A", cwd=seed)
-            self.git(env, "-c", "user.name=t", "-c", "user.email=t@example.invalid",
-                     "commit", "-q", "-m", "seed", cwd=seed)
-            self.git(env, "push", "-q", "origin", "HEAD:main", cwd=seed)
+        oci_dir, _ = UpdateIndexTests.write_oci_layout(self, root)
+        docs_repo = root / "docs.git"
+        env = {
+            "PATH": os.environ["PATH"],
+            "HOME": str(root),
+            "GIT_CONFIG_NOSYSTEM": "1",
+            # Serve the docs-repo remote from a local bare repository.
+            "GIT_CONFIG_COUNT": "1",
+            "GIT_CONFIG_KEY_0": f"url.{docs_repo.as_uri()}.insteadOf",
+            "GIT_CONFIG_VALUE_0": self.REMOTE,
+        }
+        self.git(env, "init", "-q", "--bare", "-b", "main", str(docs_repo))
+        seed = root / "seed"
+        self.git(env, "clone", "-q", self.REMOTE, str(seed))
+        (seed / "static" / "flatpak" / "index").mkdir(parents=True)
+        (seed / "static" / "flatpak" / "index" / "static").write_text("{}\n")
+        self.git(env, "add", "-A", cwd=seed)
+        self.git(env, "-c", "user.name=t", "-c", "user.email=t@example.invalid",
+                 "commit", "-q", "-m", "seed", cwd=seed)
+        self.git(env, "push", "-q", "origin", "HEAD:main", cwd=seed)
 
-            run_env = {
-                **env,
-                "ACTION_PATH": str(self.ACTION.parent),
-                "OCI_DIR": str(oci_dir),
-                "INDEX_FILE": "static/flatpak/index/static",
-                "REPO_NAME": "tuna-os/example",
-                "REGISTRY": "ghcr.io",
-                "TAGS": "latest",
-                "DOCS_REPO": "example/docs",
-                "FLATPAK_INDEX_SSH_KEY": "not-a-key",
-                "FLATPAK_INDEX_TOKEN": "",
-                "MAX_ATTEMPTS": "1",
-                "GITHUB_REPOSITORY": "tuna-os/example",
-                "GITHUB_WORKFLOW_REF": "tuna-os/example/.github/workflows/release.yml@refs/tags/v1",
-                "GITHUB_SERVER_URL": "https://github.com",
-                "GITHUB_RUN_ID": "42",
-                "GITHUB_RUN_ATTEMPT": "2",
-            }
-            result = subprocess.run(
-                ["bash", "-c", script], env=run_env, capture_output=True, text=True, check=False
-            )
+        run_env = {
+            **env,
+            "ACTION_PATH": str(self.ACTION.parent),
+            "OCI_DIR": str(oci_dir),
+            "INDEX_FILE": "static/flatpak/index/static",
+            "REPO_NAME": "tuna-os/example",
+            "REGISTRY": "ghcr.io",
+            "TAGS": tags,
+            "REQUIRE_APPSTREAM": "false",
+            "DOCS_REPO": "example/docs",
+            "FLATPAK_INDEX_SSH_KEY": "not-a-key",
+            "FLATPAK_INDEX_TOKEN": "",
+            "MAX_ATTEMPTS": "1",
+            "GITHUB_REPOSITORY": "tuna-os/example",
+            "GITHUB_WORKFLOW_REF": "tuna-os/example/.github/workflows/release.yml@refs/tags/v1",
+            "GITHUB_SERVER_URL": "https://github.com",
+            "GITHUB_RUN_ID": "42",
+            "GITHUB_RUN_ATTEMPT": "2",
+        }
+        result = subprocess.run(
+            ["bash", "-c", script], env=run_env, capture_output=True, text=True, check=False
+        )
+        return result, env, docs_repo
+
+    def test_index_commit_names_its_source_run(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            result, env, docs_repo = self.run_publish(Path(temp_dir), "latest")
             self.assertEqual(result.returncode, 0, result.stderr)
             message = self.git(env, "--git-dir", str(docs_repo), "log", "-1", "--format=%B", "main")
 
@@ -387,6 +392,64 @@ class PublishFlatpakIndexActionTests(unittest.TestCase):
                 "Source-Run: https://github.com/tuna-os/example/actions/runs/42/attempts/2",
             ],
         )
+
+    def test_rejects_a_tag_that_would_override_another_argument(self):
+        # argparse keeps the last value, so an unchecked `--repo-name` word in
+        # TAGS would write this app's image under another app's index key and
+        # push it; `--index-file` would write outside the clone and exit 0.
+        for tags in ("latest --repo-name tuna-os/other", "latest --index-file {root}/x", ""):
+            with self.subTest(tags=tags), tempfile.TemporaryDirectory() as temp_dir:
+                root = Path(temp_dir)
+                result, env, docs_repo = self.run_publish(root, tags.format(root=root))
+                self.assertFalse((root / "x").exists())
+                self.assertNotEqual(result.returncode, 0, result.stdout)
+                self.assertIn("::error::", result.stderr)
+                subject = self.git(env, "--git-dir", str(docs_repo), "log", "-1",
+                                   "--format=%s", "main")
+                self.assertEqual(subject.strip(), "seed")
+
+
+class UpdateFlatpakIndexActionTests(unittest.TestCase):
+    """Run update-flatpak-index's script, which shares the publish entry point."""
+
+    ACTION = Path(__file__).with_name("action.yml")
+
+    def run_action(self, root, tags):
+        import yaml
+
+        action = yaml.safe_load(self.ACTION.read_text(encoding="utf-8"))
+        script = action["runs"]["steps"][0]["run"]
+        oci_dir, _ = UpdateIndexTests.write_oci_layout(self, root)
+        env = {
+            "PATH": os.environ["PATH"],
+            "ACTION_PATH": str(self.ACTION.parent),
+            "OCI_DIR": str(oci_dir),
+            "INDEX_FILE": str(root / "index" / "static"),
+            "REPO_NAME": "tuna-os/example",
+            "REGISTRY": "ghcr.io",
+            "TAGS": tags,
+            "REQUIRE_APPSTREAM": "true",
+        }
+        return subprocess.run(
+            ["bash", "-c", script], env=env, capture_output=True, text=True, check=False
+        )
+
+    def test_splits_tags_and_passes_require_appstream(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            result = self.run_action(root, "stable v1")
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertIn("appstream=yes", result.stdout)
+            index = json.loads((root / "index" / "static").read_text(encoding="utf-8"))
+        self.assertEqual(index["Results"][0]["Images"][0]["Tags"], ["stable", "v1"])
+
+    def test_rejects_a_tag_outside_the_oci_grammar(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            result = self.run_action(root, "latest --repo-name tuna-os/other")
+            self.assertNotEqual(result.returncode, 0)
+            self.assertIn("invalid OCI tag: --repo-name", result.stderr)
+            self.assertFalse((root / "index" / "static").exists())
 
 
 if __name__ == "__main__":
