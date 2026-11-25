@@ -73,12 +73,6 @@ runs:
       run: |
         set -euo pipefail
 
-        read -ra tag_args <<<"$TAGS"
-        if [ "${#tag_args[@]}" -eq 0 ]; then
-          echo "::error::tags input is empty" >&2
-          exit 1
-        fi
-
         WORKDIR="$(mktemp -d)"
         # The deploy key is written under WORKDIR; remove it on every exit.
         trap 'rm -rf "$WORKDIR"' EXIT
@@ -144,13 +138,10 @@ runs:
 
         attempt=1
         while :; do
-          python3 "$ACTION_PATH/../update-flatpak-index/update-index.py" \
-            --oci-dir "$OCI_DIR" \
-            --index-file "$INDEX_REPO/$INDEX_FILE" \
-            --repo-name "$REPO_NAME" \
-            --registry "$REGISTRY" \
-            --tags "${tag_args[@]}" \
-            $([ "$REQUIRE_APPSTREAM" = "true" ] && echo "--require-appstream" || true)
+          # The same entry point update-flatpak-index runs, so the tag check
+          # and the argv are shared rather than copied.
+          INDEX_FILE="$INDEX_REPO/$INDEX_FILE" \
+            bash "$ACTION_PATH/../update-flatpak-index/run-update-index.sh"
 
           pushd "$INDEX_REPO" >/dev/null
           # tuna-os/docs keeps remote icon metadata and PNG files generated

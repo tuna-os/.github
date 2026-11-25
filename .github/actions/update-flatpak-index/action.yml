@@ -51,27 +51,4 @@ runs:
         REGISTRY: ${{ inputs.registry }}
         TAGS: ${{ inputs.tags }}
         REQUIRE_APPSTREAM: ${{ inputs.require-appstream }}
-      run: |
-        set -euo pipefail
-
-        # OCI tag grammar, so a malformed input is a clear error here rather
-        # than a stray argument to update-index.py.
-        read -ra tag_args <<<"$TAGS"
-        if [ "${#tag_args[@]}" -eq 0 ]; then
-          echo "::error::tags input is empty" >&2
-          exit 1
-        fi
-        for tag in "${tag_args[@]}"; do
-          if ! [[ "$tag" =~ ^[A-Za-z0-9_][A-Za-z0-9._-]{0,127}$ ]]; then
-            echo "::error::invalid OCI tag: $tag" >&2
-            exit 1
-          fi
-        done
-
-        python3 "$ACTION_PATH/update-index.py" \
-          --oci-dir "$OCI_DIR" \
-          --index-file "$INDEX_FILE" \
-          --repo-name "$REPO_NAME" \
-          --registry "$REGISTRY" \
-          --tags "${tag_args[@]}" \
-          $([ "$REQUIRE_APPSTREAM" = "true" ] && echo "--require-appstream" || true)
+      run: bash "$ACTION_PATH/run-update-index.sh"
