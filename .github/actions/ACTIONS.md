@@ -23,6 +23,7 @@ Cross-repository callers pin a complete commit SHA and keep it current through R
 | Action | Path | Description | README |
 |---|---|---|---|
 | **Arch Plan** | [`.github/actions/arch-plan`](arch-plan/) | Validates and normalizes target architectures (`x86_64`, `aarch64`) for Flatpak builds, emitting execution plans, runner maps, and primary tags. | — |
+| **Capture App Screenshots** | [`.github/actions/capture-screenshots`](capture-screenshots/) | Photographs a GUI app's own window under a headless X server (GTK, Qt, Electron, Xt) and writes a PNG plus a versioned JSON receipt. Installs its dependencies with `dnf` or `apt`. | — |
 | **CI Contract Check** | [`.github/actions/ci-contract-check`](ci-contract-check/) | Verifies that all criteria declared in `green-criteria.yml` are asserted by reachable workflow jobs or steps. | — |
 | **Flatpak Copy-Up** | [`.github/actions/flatpak-copy-up`](flatpak-copy-up/) | Copies the Flatpak installations of a container image into the writable layer when overlayfs cannot rename image-layer directories (EXDEV). | — |
 | **Count Ratchet** | [`.github/actions/count-ratchet`](count-ratchet/) | Holds regex- or command-counted metrics at a budget that only goes down: fails over budget, fails on slack with the exact new budget, and blocks pull requests that raise a budget without the `ratchet-raise` label. | [README](count-ratchet/README.md) |
@@ -195,4 +196,19 @@ Cross-repository callers pin a complete commit SHA and keep it current through R
       persist-credentials: false
       fetch-depth: 0
   - uses: tuna-os/.github/.github/actions/count-ratchet@<reviewed-main-sha> # main
+  ```
+
+---
+
+### 9. `capture-screenshots`
+- **Location:** [`.github/actions/capture-screenshots/action.yml`](capture-screenshots/action.yml)
+- **Description:** Launches `command` under a headless Xvfb display, waits for the app window, and writes `<out-dir>/<name>.png` and `<name>.receipt.json`. Flat or blank images are rejected. Published from `tuna-os/flatpak-index@e152892`. Self-tests: `.github/workflows/capture-screenshots-test.yml` (`capture action (apt)` and `capture action (dnf)`).
+- **Inputs:** `command` *(required)*, `name` *(required)*, `out-dir` (default `docs/screenshots`), `geometry` (`1000x700`), `settle` (`6`), `app-id`, `wm-class`, `readiness-predicate`, `deadline`, `capture-mode` (`window`), `required` (`true`).
+- **Outputs:** `image`, `receipt`, `outcome`, `window-id`, `frame-hash`, `target-pid`.
+- **Usage:**
+  ```yaml
+  - uses: tuna-os/.github/.github/actions/capture-screenshots@<full-sha-of-a-main-commit-that-contains-this-action> # main
+    with:
+      command: myapp
+      name: 01-main
   ```
