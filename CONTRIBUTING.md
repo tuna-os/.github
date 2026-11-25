@@ -22,7 +22,7 @@ Never post account credentials or API keys in issues or pull requests.
 | Area | Repos |
 |---|---|
 | Image build factory | `tuna-os/tunaOS`, `tuna-os/tunaos-packages`, `tuna-os/tromso` |
-| Installers | `tuna-os/bootc-installer`, `tuna-os/tuna-installer-{cosmic,kde,niri,xfce}` |
+| Installers | `tuna-os/installer` (all five desktop frontends), `tuna-os/fisherman` |
 | Migration | `tuna-os/wootc`, `tuna-os/bootc-migrate` |
 | Apps | `tuna-os/gtk-office-suite` (Letters, Tables, Decks), `tuna-os/Tavern` |
 | Docs | `tuna-os/docs` (index lives in `docs/static/flatpak/index/static`) |

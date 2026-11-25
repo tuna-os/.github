@@ -48,7 +48,7 @@ it is **36 / 40**. The four repositories without a roadmap:
 | athens | bst | ❌ |
 | bluefin-cli | main | ✅ |
 | blueshell | ptyxis-port | ✅ |
-| bootc-installer | dev | ✅ |
+| installer | dev | ✅ |
 | bootc-migrate | main | ✅ |
 | bootsahi | main | ✅ |
 | branding | main | ✅ |
