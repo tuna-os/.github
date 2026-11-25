@@ -1,0 +1,80 @@
+name: Capture action self-test
+
+# Consumer coverage for .github/actions/capture-screenshots: runs the action
+# for real on both package-manager paths (apt and dnf). A defect in it
+# otherwise only surfaces as a red build in another repository.
+#
+# xclock -analog rather than xmessage: xmessage draws unantialiased black text
+# on white (2 colours), which the script's blank-image guard rejects.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/actions/capture-screenshots/**"
+      - ".github/workflows/capture-screenshots-test.yml"
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/actions/capture-screenshots/**"
+      - ".github/workflows/capture-screenshots-test.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  capture-action-apt:
+    name: capture action (apt)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7.0.1
+        with:
+          persist-credentials: false
+      - name: Install the test client
+        # xclock lives in x11-apps on Debian; the action installs x11-utils.
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq x11-apps
+      - uses: $/.github/actions/capture-screenshots
+        with:
+          command: xclock -analog
+          name: self-test
+          out-dir: /tmp/shots
+      - name: The capture must be a real, non-blank image with a verified receipt
+        run: |
+          # capture-app.sh deletes a flat image, so a file here means a window painted.
+          test -s /tmp/shots/self-test.png
+          identify -format '%m %wx%h %k colours\n' /tmp/shots/self-test.png | grep -q '^PNG'
+          test -s /tmp/shots/self-test.receipt.json
+          python3 -c "import json; r=json.load(open('/tmp/shots/self-test.receipt.json')); assert r['outcome'] == 'passed'; assert r['cleanup']['status'] == 'success'; assert r['observed']['frame_hash']"
+      - name: Run unit and contract tests
+        run: python3 -m unittest discover -s .github/actions/capture-screenshots -p 'test_*.py' -v
+
+  capture-action-dnf:
+    name: capture action (dnf)
+    runs-on: ubuntu-latest
+    container: fedora:46
+    steps:
+      - name: Install git first
+        run: dnf -y install git
+      - uses: actions/checkout@v7.0.1
+        with:
+          persist-credentials: false
+      - name: Install the test client
+        run: dnf -y install xclock
+      - uses: $/.github/actions/capture-screenshots
+        with:
+          command: xclock -analog
+          name: self-test
+          out-dir: /tmp/shots
+      - name: The capture must be a real, non-blank image with a verified receipt
+        run: |
+          test -s /tmp/shots/self-test.png
+          identify -format '%m %wx%h %k colours\n' /tmp/shots/self-test.png | grep -q '^PNG'
+          test -s /tmp/shots/self-test.receipt.json
+          python3 -c "import json; r=json.load(open('/tmp/shots/self-test.receipt.json')); assert r['outcome'] == 'passed'; assert r['cleanup']['status'] == 'success'; assert r['observed']['frame_hash']"
+      - name: Run unit and contract tests
+        run: python3 -m unittest discover -s .github/actions/capture-screenshots -p 'test_*.py' -v

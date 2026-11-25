@@ -8,6 +8,8 @@ workflows:
         - 'zizmorcore/zizmor-action@v0.8.1'
     '.github/workflows/arch-plan-check.yml':
         - 'actions/checkout@v7.0.1'
+    '.github/workflows/capture-screenshots-test.yml':
+        - 'actions/checkout@v7.0.1'
     '.github/workflows/drop-bot-review-requests.yml': []
     '.github/workflows/enrollment-prototype-test.yml':
         - 'actions/checkout@v7.0.1'
