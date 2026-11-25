@@ -76,10 +76,10 @@ The existing pin-checker `--self-repo` exemption covers only references into
 the repository being checked. It is not a blanket exemption for first-party
 org code. This documentation change does not alter that exception.
 
-`publish-flatpak.yml` references its own composite actions (`arch-plan`,
-`publish-flatpak-index`) as `$/.github/actions/...`, which GitHub resolves to
-this repository at the commit the caller pinned, so those actions always match
-the pinned workflow. The other reusable workflows still reference their
+`publish-flatpak.yml` and `ste-lint.yml` reference their own composite actions
+(`arch-plan`, `flatpak-copy-up`, `publish-flatpak-index` and `ste-lint`) as
+`$/.github/actions/...`, which GitHub resolves to this repository at the commit
+the caller pinned, so those actions always match the pinned workflow. The other reusable workflows still reference their
 actions as `tuna-os/.github/.github/actions/<name>@main`. Callers' lockfiles
 don't cover a called workflow's actions; this repository's
 `.github/workflows/actions.lock` does, so those `@main` references run the
@@ -215,6 +215,8 @@ their own `on:` trigger and become a thin job.
 | `node-version` | string | no | `"24"` | Node version the linter runs on. |
 | `run-tests` | boolean | no | `true` | Run the linter's own test suite. Set `false` to skip. |
 | `runs-on` | string | no | `ubuntu-24.04` | Runner label for the job. |
+| `ratchet` | boolean | no | `false` | Set `true` to apply the count-ratchet rules: a count under budget fails, and a pull request that raises the budget needs `raise-label`. Add `labeled` and `unlabeled` to the caller's `pull_request` types. |
+| `raise-label` | string | no | `ratchet-raise` | Label that lets a pull request raise the budget in ratchet mode. |
 | `checkout-ref` | string | no | `""` | Ref to check out. Empty means the ref that triggered the caller. |
 
 **Usage.**
