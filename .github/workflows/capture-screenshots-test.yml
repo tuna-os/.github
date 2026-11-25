@@ -38,7 +38,7 @@ jobs:
       - name: Install the test client
         # xclock lives in x11-apps on Debian; the action installs x11-utils.
         run: sudo apt-get update -qq && sudo apt-get install -y -qq x11-apps
-      - uses: ./.github/actions/capture-screenshots
+      - uses: $/.github/actions/capture-screenshots
         with:
           command: xclock -analog
           name: self-test
@@ -65,7 +65,7 @@ jobs:
           persist-credentials: false
       - name: Install the test client
         run: dnf -y install xclock
-      - uses: ./.github/actions/capture-screenshots
+      - uses: $/.github/actions/capture-screenshots
         with:
           command: xclock -analog
           name: self-test
