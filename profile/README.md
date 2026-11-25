@@ -73,8 +73,8 @@ Built in this org and published on the TunaOS Flatpak remote, so they install on
 | [bootc-migrate](https://github.com/tuna-os/bootc-migrate) | In-place migration from OSTree-backed bootc systems to ComposeFS |
 | [remora](https://github.com/tuna-os/remora) | Local package layering that survives image updates |
 | [wootc](https://github.com/tuna-os/wootc) | Installs a bootc Linux desktop from inside Windows, reversibly |
-| [bootc-installer](https://github.com/tuna-os/bootc-installer) | The libadwaita installer for bootc systems, backed by the [fisherman](https://github.com/tuna-os/fisherman) service |
-| [bootc-installer-asahi](https://github.com/tuna-os/bootc-installer-asahi) | The Apple Silicon installer path for TunaOS-family bootc images |
+| [installer](https://github.com/tuna-os/installer) | The native installers for bootc systems (GNOME, KDE, COSMIC, niri and XFCE), backed by the [fisherman](https://github.com/tuna-os/fisherman) service |
+| [bootsahi](https://github.com/tuna-os/bootsahi) | The Apple Silicon installer path for TunaOS-family bootc images |
 | [flatpak-index](https://github.com/tuna-os/flatpak-index) | The central index behind the TunaOS Flatpak remote |
 | [branding](https://github.com/tuna-os/branding) | Species marks for installers, ISOs and docs |
 
